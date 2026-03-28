@@ -11,7 +11,11 @@ export type Product = {
 /* -------------------------------------------------------
    🧺 Available Products
    Static catalog used by the POS product list.
-   In a real app, this could come from a database or API.
+
+   NOTE:
+   - This is mock data for the POS demo.
+   - In a real system, products would come from a database
+     or an API endpoint.
 ------------------------------------------------------- */
 export const products: Product[] = [
   { id: 1, name: "Chocolate Chip Cookies", price: 2.5 },

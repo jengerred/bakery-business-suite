@@ -3,6 +3,7 @@
 /* -------------------------------------------------------
    🧺 Product Data
    Static product list + Product type.
+   Used to render the available items in the POS.
 ------------------------------------------------------- */
 import { products } from "@/app/pos/lib/products";
 import { Product } from "@/app/pos/lib/products";
@@ -10,7 +11,15 @@ import { Product } from "@/app/pos/lib/products";
 /* -------------------------------------------------------
    🧱 ProductList
    Displays all available products with an "Add" button.
-   Used inside ProductListSection.
+
+   Responsibilities:
+   - Show product name + price
+   - Allow cashier to add a product to the order
+   - Pure UI component (no state, no effects)
+
+   NOTE:
+   - This is the cashier-facing product list.
+   - The reader has no equivalent component.
 ------------------------------------------------------- */
 type ProductListProps = {
   onAdd: (product: Product) => void; // Add product to cart

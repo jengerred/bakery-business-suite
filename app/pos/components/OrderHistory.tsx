@@ -5,18 +5,28 @@
    Provides access to:
    - orderHistory (array of CompletedOrder)
    - clearHistory() to wipe all records
+
+   NOTE:
+   - This component is cashier-facing.
+   - It displays all completed orders stored in localStorage.
 ------------------------------------------------------- */
 import { useOrderHistoryContext } from "../context/OrderHistoryContext";
 
 /* -------------------------------------------------------
    📜 OrderHistory
-   Displays a list of all completed orders.
-   Includes:
-   - Order ID
-   - Timestamp
-   - Line items
-   - Total
-   - Clear History button
+   Cashier-facing list of all completed orders.
+
+   Responsibilities:
+   - Show each order with:
+       • Shortened Order ID
+       • Timestamp
+       • Line items
+       • Total
+   - Provide a "Clear History" button when orders exist
+
+   NOTE:
+   - This is intentionally simple and presentational.
+   - No business logic lives here — all state comes from context.
 ------------------------------------------------------- */
 export default function OrderHistory() {
   const { orderHistory, clearHistory } = useOrderHistoryContext();
@@ -27,6 +37,7 @@ export default function OrderHistory() {
 
       {/* -------------------------------------------------------
          🪹 EMPTY STATE
+         Shown when no orders have been completed yet.
       ------------------------------------------------------- */}
       {orderHistory.length === 0 && (
         <p className="text-gray-500">No orders yet.</p>
@@ -34,10 +45,12 @@ export default function OrderHistory() {
 
       {/* -------------------------------------------------------
          📦 ORDER LIST
+         Displays each completed order with items + totals.
       ------------------------------------------------------- */}
       <ul className="space-y-4">
         {orderHistory.map((order) => (
           <li key={order.id} className="border p-3 rounded">
+
             {/* Order ID + timestamp */}
             <p className="font-medium">Order #{order.id.slice(0, 8)}</p>
             <p className="text-sm text-gray-500">
@@ -63,6 +76,7 @@ export default function OrderHistory() {
 
       {/* -------------------------------------------------------
          🗑️ CLEAR HISTORY BUTTON
+         Only shown when at least one order exists.
       ------------------------------------------------------- */}
       {orderHistory.length > 0 && (
         <button

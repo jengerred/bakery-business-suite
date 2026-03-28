@@ -1,14 +1,46 @@
 "use client";
 
+/* -------------------------------------------------------
+   🧾 Types
+   CompletedOrder includes:
+   - items
+   - totals
+   - payment details
+   - customer info
+------------------------------------------------------- */
 import { CompletedOrder } from "../context/OrderHistoryContext";
 
+/* -------------------------------------------------------
+   🧱 ReceiptModal (Cashier-Side)
+   Displays the final receipt after checkout.
+
+   Responsibilities:
+   - Show order items, totals, and payment details
+   - Show customer name (if available)
+   - Show cashier-only banner indicating receipt choice
+   - Allow printing (only when permitted)
+   - Allow cashier to close the modal
+
+   NOTE:
+   - This is the CASHIER receipt view.
+   - The reader has its own receipt-choice UI.
+   - The print button is hidden during printing (print:hidden).
+------------------------------------------------------- */
 type ReceiptModalProps = {
   order: CompletedOrder;
   receiptMethod: "print" | "email" | "text" | "none" | null;
   onClose: () => void;
 };
 
-export default function ReceiptModal({ order, receiptMethod, onClose }: ReceiptModalProps) {
+export default function ReceiptModal({
+  order,
+  receiptMethod,
+  onClose,
+}: ReceiptModalProps) {
+
+  /* -------------------------------------------------------
+     🧮 Totals
+  ------------------------------------------------------- */
   const subtotal = order.items.reduce(
     (sum, item) => sum + item.product.price * item.quantity,
     0
@@ -16,9 +48,12 @@ export default function ReceiptModal({ order, receiptMethod, onClose }: ReceiptM
   const tax = subtotal * 0.06;
   const total = subtotal + tax;
 
-  // Print button enabled only if:
-  // - Customer chose print
-  // - OR no account / timeout (receiptMethod === null)
+  /* -------------------------------------------------------
+     🖨️ Print Button Logic
+     Enabled only when:
+     - Customer chose print
+     - OR no account / timeout (receiptMethod === null)
+  ------------------------------------------------------- */
   const printEnabled =
     receiptMethod === "print" || receiptMethod === null;
 
@@ -26,7 +61,10 @@ export default function ReceiptModal({ order, receiptMethod, onClose }: ReceiptM
     <div id="receipt-print-area" className="h-full w-full">
       <div className="bg-white p-4">
 
-        {/* CASHIER-ONLY BANNER */}
+        {/* -------------------------------------------------------
+           🧾 CASHIER-ONLY RECEIPT METHOD BANNER
+           Hidden during printing.
+        ------------------------------------------------------- */}
         {receiptMethod && (
           <div className="mb-4 p-2 bg-gray-100 border rounded text-sm text-gray-700 print:hidden">
             {receiptMethod === "print" && "Customer chose: Print Receipt"}
@@ -36,6 +74,9 @@ export default function ReceiptModal({ order, receiptMethod, onClose }: ReceiptM
           </div>
         )}
 
+        {/* -------------------------------------------------------
+           🧾 RECEIPT HEADER
+        ------------------------------------------------------- */}
         <h2 className="text-xl font-semibold mb-2">Receipt</h2>
 
         {order.customerName && (
@@ -51,6 +92,9 @@ export default function ReceiptModal({ order, receiptMethod, onClose }: ReceiptM
           {new Date(order.timestamp).toLocaleString()}
         </p>
 
+        {/* -------------------------------------------------------
+           🛒 LINE ITEMS
+        ------------------------------------------------------- */}
         <ul className="space-y-2 mb-4">
           {order.items.map((item) => (
             <li key={item.product.id} className="flex justify-between">
@@ -60,6 +104,9 @@ export default function ReceiptModal({ order, receiptMethod, onClose }: ReceiptM
           ))}
         </ul>
 
+        {/* -------------------------------------------------------
+           💵 TOTALS
+        ------------------------------------------------------- */}
         <div className="space-y-1 mb-4">
           <div className="flex justify-between">
             <span>Subtotal</span>
@@ -77,6 +124,9 @@ export default function ReceiptModal({ order, receiptMethod, onClose }: ReceiptM
           </div>
         </div>
 
+        {/* -------------------------------------------------------
+           💳 PAYMENT DETAILS
+        ------------------------------------------------------- */}
         <div className="border-t pt-3 mt-4 text-sm space-y-1">
           <p className="font-semibold mb-1">Payment Details</p>
 
@@ -105,6 +155,10 @@ export default function ReceiptModal({ order, receiptMethod, onClose }: ReceiptM
           )}
         </div>
 
+        {/* -------------------------------------------------------
+           🖨️ PRINT + CLOSE BUTTONS
+           Hidden during printing.
+        ------------------------------------------------------- */}
         <div className="flex justify-end mt-6 print:hidden">
           <button
             onClick={() => window.print()}

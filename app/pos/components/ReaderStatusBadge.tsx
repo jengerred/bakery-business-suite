@@ -9,15 +9,25 @@ type Props = {
 };
 
 /* -------------------------------------------------------
-   🔌 ReaderStatusBadge
+   🔌 ReaderStatusBadge (Reader-Side)
    Displays a small colored badge showing the simulated
-   card reader’s current status (connected, collecting, etc).
+   card reader’s current status.
+
+   Responsibilities:
+   - Convert internal status → human-readable label
+   - Apply color styles based on status
+   - Render a compact badge in the reader header
+
+   NOTE:
+   - This is the READER version of the status indicator.
+   - The cashier UI has its own status messaging.
 ------------------------------------------------------- */
 export default function ReaderStatusBadge({ status }: Props) {
-  /* ------------------------------
+
+  /* -------------------------------------------------------
      🎨 Color Styles
      Background + text color based on status.
-  ------------------------------ */
+  ------------------------------------------------------- */
   const color =
     status === "connected"
       ? "bg-green-100 text-green-700"
@@ -31,10 +41,10 @@ export default function ReaderStatusBadge({ status }: Props) {
       ? "bg-red-100 text-red-700"
       : "bg-gray-200 text-gray-600"; // default (disconnected, waiting, unknown)
 
-  /* ------------------------------
+  /* -------------------------------------------------------
      🏷️ Human‑Readable Label
      Converts internal status → UI text.
-  ------------------------------ */
+  ------------------------------------------------------- */
   const label =
     status === "disconnected"
       ? "Reader Disconnected"
@@ -52,9 +62,9 @@ export default function ReaderStatusBadge({ status }: Props) {
       ? "Reader Error"
       : "";
 
-  /* ------------------------------
+  /* -------------------------------------------------------
      🎨 Render Badge
-  ------------------------------ */
+  ------------------------------------------------------- */
   return (
     <div className="flex justify-end mb-4">
       <span className={`px-3 py-1 rounded text-sm ${color}`}>

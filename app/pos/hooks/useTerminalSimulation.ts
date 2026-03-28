@@ -1,7 +1,7 @@
 "use client";
 
 /* -------------------------------------------------------
-   🧩 React
+   📦 React
 ------------------------------------------------------- */
 import { useState } from "react";
 
@@ -21,25 +21,32 @@ type TerminalStatus =
 /* -------------------------------------------------------
    💳 useTerminalSimulation
    Simulates a Stripe Terminal-like card reader for dev use.
-   Handles:
-   - Connection flow
-   - Payment collection
-   - Error states
-   - Reset behavior
+
+   Responsibilities:
+   - Manage connection lifecycle
+   - Simulate PaymentIntent creation
+   - Simulate card reader processing delays
+   - Expose status + error + control functions
+
+   NOTE:
+   - This is a DEV-ONLY simulation.
+   - Real Stripe Terminal uses hardware + WebUSB/WebBluetooth.
 ------------------------------------------------------- */
 export function useTerminalSimulation() {
-  /* ------------------------------
+
+  /* -------------------------------------------------------
      🔌 Terminal State
-  ------------------------------ */
+  ------------------------------------------------------- */
   const [status, setStatus] = useState<TerminalStatus>("disconnected");
   const [error, setError] = useState<string | null>(null);
 
   /* -------------------------------------------------------
      🔗 connect()
      Simulates connecting to a physical card reader.
+
      Flow:
        disconnected → connecting → connected → waiting
-------------------------------------------------------- */
+  ------------------------------------------------------- */
   function connect() {
     setError(null);
     setStatus("connecting");
@@ -58,11 +65,12 @@ export function useTerminalSimulation() {
   /* -------------------------------------------------------
      💳 collectPayment()
      Simulates collecting a card payment.
+
      Steps:
        1. Create PaymentIntent via API
-       2. Simulate reader processing
+       2. Simulate reader processing delay
        3. Return fake PaymentIntent ID
-------------------------------------------------------- */
+  ------------------------------------------------------- */
   async function collectPayment(
     amountInCents: number,
     onSuccess: (paymentIntentId: string) => void
@@ -103,8 +111,9 @@ export function useTerminalSimulation() {
      🔄 reset()
      Resets the reader back to:
        connected → waiting
-     Useful after completing a payment.
-------------------------------------------------------- */
+
+     Used after completing a payment.
+  ------------------------------------------------------- */
   function reset() {
     setStatus("connected");
     setError(null);
@@ -116,7 +125,7 @@ export function useTerminalSimulation() {
 
   /* -------------------------------------------------------
      📤 Exposed API
-------------------------------------------------------- */
+  ------------------------------------------------------- */
   return {
     status,
     error,

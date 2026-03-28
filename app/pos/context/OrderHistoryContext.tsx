@@ -2,6 +2,7 @@
 
 /* -------------------------------------------------------
    📦 React
+   Provides context, state, and lifecycle hooks.
 ------------------------------------------------------- */
 import { createContext, useContext, useEffect, useState } from "react";
 
@@ -45,9 +46,9 @@ export type CompletedOrder = {
    Defines what the provider exposes to the app.
 ------------------------------------------------------- */
 type OrderHistoryContextType = {
-  orderHistory: CompletedOrder[];          // All saved orders
+  orderHistory: CompletedOrder[];            // All saved orders
   addOrder: (order: CompletedOrder) => void; // Add a new order
-  clearHistory: () => void;                // Remove all orders
+  clearHistory: () => void;                  // Remove all orders
 };
 
 /* -------------------------------------------------------
@@ -57,24 +58,32 @@ export const OrderHistoryContext =
   createContext<OrderHistoryContextType | null>(null);
 
 /* -------------------------------------------------------
-   🗂️ Provider Component
+   🗂️ OrderHistoryProvider
    Wraps the POS app and manages persistent order history.
-   - Loads from localStorage on mount
-   - Saves to localStorage on updates
+
+   Responsibilities:
+   - Load order history from localStorage on mount
+   - Save order history to localStorage on updates
+   - Provide addOrder() and clearHistory() helpers
+
+   NOTE:
+   - This context is intentionally simple.
+   - Order history is append‑only except for clearHistory().
 ------------------------------------------------------- */
 export function OrderHistoryProvider({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  /* ------------------------------
+
+  /* -------------------------------------------------------
      📦 Local State
-  ------------------------------ */
+  ------------------------------------------------------- */
   const [history, setHistory] = useState<CompletedOrder[]>([]);
 
-  /* ------------------------------
+  /* -------------------------------------------------------
      📥 Load history on mount
-  ------------------------------ */
+  ------------------------------------------------------- */
   useEffect(() => {
     const saved = localStorage.getItem("orderHistory");
     if (saved) {
@@ -82,32 +91,32 @@ export function OrderHistoryProvider({
     }
   }, []);
 
-  /* ------------------------------
+  /* -------------------------------------------------------
      💾 Save history to localStorage
-  ------------------------------ */
+  ------------------------------------------------------- */
   const saveHistory = (orders: CompletedOrder[]) => {
     localStorage.setItem("orderHistory", JSON.stringify(orders));
     setHistory(orders);
   };
 
-  /* ------------------------------
+  /* -------------------------------------------------------
      ➕ Add a completed order
-  ------------------------------ */
+  ------------------------------------------------------- */
   const addOrder = (order: CompletedOrder) => {
     const updated = [...history, order];
     saveHistory(updated);
   };
 
-  /* ------------------------------
+  /* -------------------------------------------------------
      🗑️ Clear all order history
-  ------------------------------ */
+  ------------------------------------------------------- */
   const clearHistory = () => {
     saveHistory([]);
   };
 
-  /* ------------------------------
+  /* -------------------------------------------------------
      🧠 Provide context to children
-  ------------------------------ */
+  ------------------------------------------------------- */
   return (
     <OrderHistoryContext.Provider
       value={{ orderHistory: history, addOrder, clearHistory }}

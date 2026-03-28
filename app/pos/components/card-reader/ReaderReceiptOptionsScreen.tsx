@@ -2,37 +2,71 @@
 
 import { useEffect } from "react";
 
+/* -------------------------------------------------------
+   🧾 Types
+   Props describe:
+   - Whether the customer has an account
+   - Callback for chosen receipt method
+   - Callback for timeout (no interaction)
+------------------------------------------------------- */
 type Props = {
   customerExists: boolean;
   onDone: (method: "print" | "email" | "text" | "none") => void;
-  onTimeout: () => void;   // ⭐ Added this line
+  onTimeout: () => void;
 };
 
+/* -------------------------------------------------------
+   🧱 ReaderReceiptOptionsScreen
+   Customer-facing receipt selection screen.
+
+   Responsibilities:
+   - Show available receipt options
+   - Auto-timeout after 10 seconds of inactivity
+   - Notify parent which method was chosen
+   - Support reduced options when no customer exists
+
+   NOTE:
+   - This screen is intentionally minimal to match real
+     Stripe Terminal UX patterns.
+------------------------------------------------------- */
 export default function ReaderReceiptOptionsScreen({
   customerExists,
   onDone,
-  onTimeout,              // ⭐ Accept it here
+  onTimeout,
 }: Props) {
 
   /* -------------------------------------------------------
-     AUTO-TIMEOUT (e.g., customer walks away)
-     After 10 seconds → treat as no receipt chosen
+     ⏱️ AUTO-TIMEOUT
+     If the customer does nothing for 10 seconds:
+     → Treat as "none"
+     → Parent handles thank-you + reset flow
   ------------------------------------------------------- */
   useEffect(() => {
     const timer = setTimeout(() => {
-      onTimeout();        // ⭐ Trigger timeout callback
+      onTimeout();
     }, 10000);
 
     return () => clearTimeout(timer);
   }, [onTimeout]);
 
+  /* -------------------------------------------------------
+     🎨 UI — Receipt Options
+     Customer with account:
+       - Print
+       - Email
+       - Text
+       - None
+     Guest customer:
+       - Print
+       - None
+  ------------------------------------------------------- */
   return (
     <div className="flex flex-col items-center justify-center h-full space-y-6">
 
       <h2 className="text-xl font-semibold">Receipt Options</h2>
 
-      {/* ⭐ Customer with account gets all options */}
       {customerExists ? (
+        /* ⭐ Full options for known customers */
         <div className="flex flex-col space-y-3 w-full px-6">
           <button
             onClick={() => onDone("print")}
@@ -63,7 +97,7 @@ export default function ReaderReceiptOptionsScreen({
           </button>
         </div>
       ) : (
-        /* ⭐ No customer → only print or none */
+        /* ⭐ Guest customer → limited options */
         <div className="flex flex-col space-y-3 w-full px-6">
           <button
             onClick={() => onDone("print")}

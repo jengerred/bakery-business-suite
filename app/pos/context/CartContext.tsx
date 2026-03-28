@@ -1,10 +1,26 @@
 "use client";
 
+/* -------------------------------------------------------
+   🧺 Product Type
+   Used to type items stored in the cart.
+------------------------------------------------------- */
 import { createContext, useContext, useState } from "react";
 import type { Product } from "../lib/products";
 
+/* -------------------------------------------------------
+   🛒 CartItem Type
+   Represents a single line item in the cart.
+------------------------------------------------------- */
 type CartItem = { product: Product; quantity: number };
 
+/* -------------------------------------------------------
+   🧠 CartContext Shape
+   Provides:
+   - order (cart items)
+   - selectedProduct (for modal editing)
+   - tempQty (temporary quantity while editing)
+   - handlers for add/update/remove/increase/decrease
+------------------------------------------------------- */
 type CartContextType = {
   order: CartItem[];
   setOrder: (items: CartItem[]) => void;
@@ -19,19 +35,44 @@ type CartContextType = {
   handleDecrease: (id: number) => void;
 };
 
+/* -------------------------------------------------------
+   🧱 Create Context
+------------------------------------------------------- */
 const CartContext = createContext<CartContextType | null>(null);
 
+/* -------------------------------------------------------
+   🧱 CartProvider
+   Wraps the POS and exposes cart state + handlers.
+
+   Responsibilities:
+   - Manage cart items
+   - Manage product editing modal state
+   - Provide quantity manipulation helpers
+   - Keep logic centralized and reusable
+------------------------------------------------------- */
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [order, setOrder] = useState<CartItem[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [tempQty, setTempQty] = useState(1);
 
+
+    /* -------------------------------------------------------
+     🪟 Open Product Modal
+     Pre-fills quantity if product already exists in cart.
+  ------------------------------------------------------- */
   const openProductModal = (product: Product) => {
     const existing = order.find((i) => i.product.id === product.id);
     setSelectedProduct(product);
     setTempQty(existing ? existing.quantity : 1);
   };
 
+
+    /* -------------------------------------------------------
+     💾 Save Product Changes
+     - If qty <= 0 → remove item
+     - If exists → update quantity
+     - Else → add new item
+  ------------------------------------------------------- */
   const saveProductChanges = (product: Product, newQty: number) => {
     if (newQty <= 0) {
       setOrder(order.filter((i) => i.product.id !== product.id));
@@ -53,10 +94,17 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     setTempQty(newQty);
   };
 
+
+  /* -------------------------------------------------------
+     ❌ Remove Item
+  ------------------------------------------------------- */
   const handleRemove = (productId: number) => {
     setOrder(order.filter((item) => item.product.id !== productId));
   };
 
+   /* -------------------------------------------------------
+     ➕ Increase Quantity
+  ------------------------------------------------------- */
   const handleIncrease = (productId: number) => {
     setOrder(
       order.map((item) =>
@@ -67,6 +115,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     );
   };
 
+    /* -------------------------------------------------------
+     ➖ Decrease Quantity
+     Removes item if quantity hits zero.
+  ------------------------------------------------------- */
   const handleDecrease = (productId: number) => {
     setOrder(
       order
@@ -100,6 +152,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
+/* -------------------------------------------------------
+   🪝 useCartContext
+   Hook for accessing cart state + actions.
+------------------------------------------------------- */
 export function useCartContext() {
   const ctx = useContext(CartContext);
   if (!ctx) throw new Error("useCartContext must be inside CartProvider");

@@ -1,17 +1,17 @@
 "use client";
 
 /* -------------------------------------------------------
-📦 React
+   📦 React
 ------------------------------------------------------- */
 import { useState, useEffect } from "react";
 
 /* -------------------------------------------------------
-🧺 Product Type
+   🧺 Product Type
 ------------------------------------------------------- */
 import { Product } from "../lib/products";
 
 /* -------------------------------------------------------
-💳 Stripe (manual card entry)
+   💳 Stripe (manual card entry)
 ------------------------------------------------------- */
 import {
   CardElement,
@@ -20,17 +20,17 @@ import {
 } from "@stripe/react-stripe-js";
 
 /* -------------------------------------------------------
-🔔 Toast Notifications
+   🔔 Toast Notifications
 ------------------------------------------------------- */
 import { toast } from "react-hot-toast";
 
 /* -------------------------------------------------------
-🧪 Simulated Terminal Hook
+   🧪 Simulated Terminal Hook
 ------------------------------------------------------- */
 import { useTerminalSimulation } from "../hooks/useTerminalSimulation";
 
 /* -------------------------------------------------------
-🧾 Props
+   🧾 Props
 ------------------------------------------------------- */
 type CheckoutModalProps = {
   order: { product: Product; quantity: number }[];
@@ -46,7 +46,14 @@ type CheckoutModalProps = {
 };
 
 /* -------------------------------------------------------
-🧱 CheckoutModal (SIDE PANEL VERSION)
+   🧱 CheckoutModal (SIDE PANEL VERSION)
+   Handles:
+   - Cash payments
+   - Manual card entry (Stripe Elements)
+   - Terminal-simulated card entry
+   - Reader status events
+   - PaymentIntent creation
+   - Reset behavior
 ------------------------------------------------------- */
 export default function CheckoutModal({
   order,
@@ -54,12 +61,13 @@ export default function CheckoutModal({
   onClose,
   onComplete,
 }: CheckoutModalProps) {
+
   const stripe = useStripe();
   const elements = useElements();
 
-  /* ------------------------------
-  🧾 Payment State
-  ------------------------------ */
+  /* -------------------------------------------------------
+     🧾 Payment State
+  ------------------------------------------------------- */
   const [paymentType, setPaymentType] =
     useState<"cash" | "credit" | "debit">("cash");
 
@@ -69,16 +77,23 @@ export default function CheckoutModal({
   const [cashTendered, setCashTendered] = useState("");
   const [loading, setLoading] = useState(false);
 
-  /* ------------------------------
-  ⭐ NEW — Reader Status for Cashier UI
-  ------------------------------ */
-  const [readerStatus, setReaderStatus] = useState<
-    "connected" | "waiting" | "collecting" | "processing" | "approved" | null
-  >(null);
+  /* -------------------------------------------------------
+     ⭐ Cashier-Side Reader Status
+     NOTE: These are UI states, not terminal states.
+  ------------------------------------------------------- */
+  type CashierReaderStatus =
+    | "connected"
+    | "waiting"
+    | "collecting"
+    | "processing"
+    | "approved"
+    | null;
 
-  /* ------------------------------
-  🧮 Totals
-  ------------------------------ */
+  const [readerStatus, setReaderStatus] = useState<CashierReaderStatus>(null);
+
+  /* -------------------------------------------------------
+     🧮 Totals
+  ------------------------------------------------------- */
   const subtotal = order.reduce(
     (sum, item) => sum + item.product.price * item.quantity,
     0
@@ -89,9 +104,9 @@ export default function CheckoutModal({
   const changeDue =
     Number(cashTendered) > 0 ? Number(cashTendered) - total : 0;
 
-  /* ------------------------------
-  🔄 Reset terminal on unmount
-  ------------------------------ */
+  /* -------------------------------------------------------
+     🔄 Reset terminal on unmount
+  ------------------------------------------------------- */
   useEffect(() => {
     return () => {
       terminal.reset();
@@ -99,7 +114,11 @@ export default function CheckoutModal({
   }, []);
 
   /* -------------------------------------------------------
-  ⭐ LISTEN FOR READER STATUS + PAYMENT EVENTS
+     ⭐ EVENT CONTRACT (Cashier ↔ Reader)
+     - reader-status-update: { status }
+     - reader-payment-started
+     - reader-payment-complete: { paymentType, cardEntryMethod }
+     - cashier-receipt-done (cash/manual card)
   ------------------------------------------------------- */
   useEffect(() => {
     function handleReaderStatus(e: any) {
@@ -113,16 +132,12 @@ export default function CheckoutModal({
     function handleReaderComplete(e: any) {
       const { paymentType, cardEntryMethod } = e.detail;
 
-      // Delay before showing "Approved"
+      // Show "Approved" briefly before completing checkout
       setTimeout(() => {
         setReaderStatus("approved");
 
-        // Delay before completing checkout
         setTimeout(() => {
-          onComplete({
-            paymentType,
-            cardEntryMethod,
-          });
+          onComplete({ paymentType, cardEntryMethod });
         }, 900);
       }, 700);
     }
@@ -139,88 +154,91 @@ export default function CheckoutModal({
   }, []);
 
   /* -------------------------------------------------------
-  ⭐ HANDLE COMPLETE (cash or manual card)
+     ⭐ HELPERS — Manual Card + Cash
+     (Terminal card is handled by reader events)
   ------------------------------------------------------- */
-  async function handleComplete() {
-    /* -------------------------
-    💳 CARD PAYMENT (manual)
-    ------------------------- */
-    if (paymentType === "credit" || paymentType === "debit") {
-      if (cardEntryMethod === "terminal") {
-        return; // Reader handles it
-      }
 
-      if (!stripe || !elements) return;
+  async function handleManualCardPayment() {
+    if (!stripe || !elements) return;
 
-      setLoading(true);
+    setLoading(true);
 
-      const res = await fetch("/api/create-payment-intent", {
-        method: "POST",
-        body: JSON.stringify({ amount: Math.round(total * 100) }),
-      });
+    const res = await fetch("/api/create-payment-intent", {
+      method: "POST",
+      body: JSON.stringify({ amount: Math.round(total * 100) }),
+    });
 
-      const { clientSecret, error } = await res.json();
+    const { clientSecret, error } = await res.json();
 
-      if (error || !clientSecret) {
-        alert("Payment error: " + error);
-        setLoading(false);
-        return;
-      }
-
-      const result = await stripe.confirmCardPayment(clientSecret, {
-        payment_method: {
-          card: elements.getElement(CardElement)!,
-        },
-      });
-
+    if (error || !clientSecret) {
+      alert("Payment error: " + error);
       setLoading(false);
-
-      if (result.error) {
-        alert(result.error.message);
-        return;
-      }
-
-      if (result.paymentIntent?.status === "succeeded") {
-        toast.success("Payment successful!");
-
-        setTimeout(() => {
-          onComplete({
-            paymentType,
-            cardEntryMethod: "manual",
-            stripePaymentId: result.paymentIntent.id,
-          });
-
-          // ⭐ Reset reader immediately for manual card
-          window.dispatchEvent(new CustomEvent("cashier-receipt-done"));
-
-        }, 600);
-      }
-
       return;
     }
 
-    /* -------------------------
-    💵 CASH PAYMENT
-    ------------------------- */
+    const result = await stripe.confirmCardPayment(clientSecret, {
+      payment_method: {
+        card: elements.getElement(CardElement)!,
+      },
+    });
+
+    setLoading(false);
+
+    if (result.error) {
+      alert(result.error.message);
+      return;
+    }
+
+    if (result.paymentIntent?.status === "succeeded") {
+      toast.success("Payment successful!");
+
+      setTimeout(() => {
+        onComplete({
+          paymentType,
+          cardEntryMethod: "manual",
+          stripePaymentId: result.paymentIntent.id,
+        });
+
+        // Reset reader for manual card
+        window.dispatchEvent(new CustomEvent("cashier-receipt-done"));
+      }, 600);
+    }
+  }
+
+  function handleCashPayment() {
     onComplete({
       paymentType: "cash",
       cashTendered: Number(cashTendered),
       changeGiven: changeDue,
     });
 
-    // ⭐ Reset reader immediately for cash/manual card
+    // Reset reader for cash
     window.dispatchEvent(new CustomEvent("cashier-receipt-done"));
-
   }
 
   /* -------------------------------------------------------
-  🎨 RENDER — SIDE PANEL
+     ⭐ HANDLE COMPLETE (cash or manual card)
+     Terminal card is handled by reader events.
+  ------------------------------------------------------- */
+  async function handleComplete() {
+    if (paymentType === "credit" || paymentType === "debit") {
+      if (cardEntryMethod === "terminal") return;
+      return handleManualCardPayment();
+    }
+
+    return handleCashPayment();
+  }
+
+  /* -------------------------------------------------------
+     🎨 RENDER — SIDE PANEL
   ------------------------------------------------------- */
   return (
     <div className="fixed top-0 left-0 h-full w-[420px] bg-white shadow-2xl z-50 p-6 overflow-y-auto">
       <h2 className="text-xl font-semibold mb-4">Checkout</h2>
 
-      {/* ⭐ READER STATUS DISPLAY */}
+      {/* -------------------------------------------------------
+         ⭐ READER STATUS DISPLAY
+      ------------------------------------------------------- */}
       {readerStatus && (
         <div className="mb-4 p-3 border rounded bg-gray-50">
           <p className="font-medium text-gray-700">Card Reader Status</p>
@@ -228,19 +246,15 @@ export default function CheckoutModal({
           {readerStatus === "connected" && (
             <p className="text-sm text-green-600">Reader Connected</p>
           )}
-
           {readerStatus === "waiting" && (
             <p className="text-sm text-blue-600">Waiting for customer…</p>
           )}
-
           {readerStatus === "collecting" && (
             <p className="text-sm text-blue-600">Collecting payment…</p>
           )}
-
           {readerStatus === "processing" && (
             <p className="text-sm text-blue-600">Processing…</p>
           )}
-
           {readerStatus === "approved" && (
             <p className="text-sm text-green-600">Payment Approved!</p>
           )}
@@ -248,7 +262,7 @@ export default function CheckoutModal({
       )}
 
       {/* -------------------------------------------------------
-      💳 PAYMENT TYPE SELECTOR
+         💳 PAYMENT TYPE SELECTOR
       ------------------------------------------------------- */}
       <div className="mb-4">
         <label className="block font-medium mb-1">Payment Type</label>
@@ -264,7 +278,7 @@ export default function CheckoutModal({
       </div>
 
       {/* -------------------------------------------------------
-      💵 CASH MODE
+         💵 CASH MODE
       ------------------------------------------------------- */}
       {paymentType === "cash" && (
         <div className="mb-4">
@@ -286,10 +300,11 @@ export default function CheckoutModal({
       )}
 
       {/* -------------------------------------------------------
-      💳 CARD MODE (credit/debit)
+         💳 CARD MODE (credit/debit)
       ------------------------------------------------------- */}
       {(paymentType === "credit" || paymentType === "debit") && (
         <div className="mb-4 space-y-3">
+
           {/* Manual vs Terminal */}
           <div className="flex gap-2 text-sm">
             <button
@@ -360,7 +375,7 @@ export default function CheckoutModal({
       )}
 
       {/* -------------------------------------------------------
-      🧭 ACTION BUTTONS
+         🧭 ACTION BUTTONS
       ------------------------------------------------------- */}
       <div className="flex justify-end gap-2 mt-6">
         <button

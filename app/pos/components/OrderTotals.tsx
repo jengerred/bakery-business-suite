@@ -16,21 +16,31 @@ type OrderItem = {
 };
 
 /* -------------------------------------------------------
-   💵 OrderTotals
+   💵 OrderTotals (Cashier-Side)
    Displays subtotal, tax, and total for the current order.
-   This is a pure UI component — no state, no side effects.
+
+   Responsibilities:
+   - Compute totals from the order array
+   - Apply Michigan's 6% sales tax
+   - Render a clean, compact totals block
+
+   NOTE:
+   - This is a pure UI component.
+   - No state, no effects, no context.
+   - The reader has its own totals display.
 ------------------------------------------------------- */
 type OrderTotalsProps = {
   order: OrderItem[]; // Cart items with quantities
 };
 
 export default function OrderTotals({ order }: OrderTotalsProps) {
-  /* ------------------------------
+
+  /* -------------------------------------------------------
      🧮 Calculate Totals
      subtotal = sum(price × qty)
      tax = 6% Michigan sales tax
      total = subtotal + tax
-  ------------------------------ */
+  ------------------------------------------------------- */
   const subtotal = order.reduce(
     (sum, item) => sum + item.product.price * item.quantity,
     0
@@ -40,9 +50,9 @@ export default function OrderTotals({ order }: OrderTotalsProps) {
   const tax = subtotal * taxRate;
   const total = subtotal + tax;
 
-  /* ------------------------------
+  /* -------------------------------------------------------
      🎨 Render Totals UI
-  ------------------------------ */
+  ------------------------------------------------------- */
   return (
     <section className="p-4 border rounded-lg bg-white shadow mt-4">
       <h2 className="text-lg font-semibold mb-3">Totals</h2>

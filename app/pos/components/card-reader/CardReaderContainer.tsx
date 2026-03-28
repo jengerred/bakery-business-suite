@@ -1,24 +1,55 @@
 "use client";
 
+/* -------------------------------------------------------
+   📦 React + Hooks
+------------------------------------------------------- */
 import { useState, useEffect } from "react";
 import { useCart } from "@/app/pos/hooks/useCart";
 import { calculateTotals } from "@/app/pos/lib/calcTotals";
 
-/* Reader Screens */
+/* -------------------------------------------------------
+   🖥️ Reader UI Screens
+   These are the customer-facing screens shown on the
+   simulated card reader device.
+------------------------------------------------------- */
 import ReaderRewardsScreen from "./ReaderRewardsScreen";
 import ReaderQuickSignupScreen from "./ReaderQuickSignupScreen";
 import ReaderOrderSummaryScreen from "./ReaderOrderSummaryScreen";
 import ReaderReceiptOptionsScreen from "./ReaderReceiptOptionsScreen";
 
+/* -------------------------------------------------------
+   👤 Customer Context + Services
+------------------------------------------------------- */
 import { useCustomer } from "@/app/pos/context/CustomerContext";
 import { userService } from "@/app/pos/lib/userService";
 
+/* -------------------------------------------------------
+   🧱 CardReaderContainer
+   The entire customer-facing reader UI.
+
+   This component:
+   - Listens for cashier events (checkout, cancel, payment enabled)
+   - Manages the reader's screen state machine
+   - Simulates payment collection
+   - Handles receipt options + thank-you flow
+   - Resets itself after each completed sale
+------------------------------------------------------- */
 export default function CardReaderContainer({ terminal }: { terminal: any }) {
+  /* -------------------------------------------------------
+     🛒 Order + Totals
+  ------------------------------------------------------- */
   const { order } = useCart();
   const totals = calculateTotals(order);
 
+  /* -------------------------------------------------------
+     👤 Customer (from global context)
+  ------------------------------------------------------- */
   const { customer, setCustomer } = useCustomer();
 
+  /* -------------------------------------------------------
+     📺 Reader Screen State Machine
+     Controls which screen the customer sees.
+  ------------------------------------------------------- */
   const [screen, setScreen] = useState<
     | "rewards"
     | "quickSignup"
@@ -27,12 +58,24 @@ export default function CardReaderContainer({ terminal }: { terminal: any }) {
     | "approved"
     | "receiptOptions"
     | "printOnly"
-    | "thankYou"   // ⭐ Added
+    | "thankYou"
   >("rewards");
 
+  /* -------------------------------------------------------
+     🔍 Rewards Lookup Value
+  ------------------------------------------------------- */
   const [lookupValue, setLookupValue] = useState("");
+
+  /* -------------------------------------------------------
+     💳 Payment Enabled Flag
+     Cashier triggers this when ready for customer to pay.
+  ------------------------------------------------------- */
   const [paymentEnabled, setPaymentEnabled] = useState(false);
 
+  /* -------------------------------------------------------
+     📡 Broadcast Reader Status to Cashier UI
+     (Used to update the cashier-side status badge)
+  ------------------------------------------------------- */
   function broadcastReaderStatus(status: string) {
     window.dispatchEvent(
       new CustomEvent("reader-status-update", { detail: { status } })
@@ -40,7 +83,8 @@ export default function CardReaderContainer({ terminal }: { terminal: any }) {
   }
 
   /* -------------------------------------------------------
-     LISTEN FOR CASHIER CHECKOUT
+     🧩 LISTEN: Cashier pressed "Checkout"
+     → Reader should show Order Summary
   ------------------------------------------------------- */
   useEffect(() => {
     function handleCheckout() {
@@ -57,7 +101,8 @@ export default function CardReaderContainer({ terminal }: { terminal: any }) {
   }, [order]);
 
   /* -------------------------------------------------------
-     LISTEN FOR CASHIER PAYMENT ENABLED
+     🧩 LISTEN: Cashier enabled payment
+     → Reader can now simulate tap/insert/swipe
   ------------------------------------------------------- */
   useEffect(() => {
     function handlePaymentEnabled() {
@@ -70,41 +115,45 @@ export default function CardReaderContainer({ terminal }: { terminal: any }) {
   }, []);
 
   /* -------------------------------------------------------
-   LISTEN FOR CASHIER CANCEL
-    ------------------------------------------------------- */
-    useEffect(() => {
+     🧩 LISTEN: Cashier canceled checkout
+     → Reset reader to Rewards screen
+  ------------------------------------------------------- */
+  useEffect(() => {
     function handleCancel() {
-        terminal.reset();
-        setPaymentEnabled(false);
-        setScreen("rewards");
-        broadcastReaderStatus("idle");
+      terminal.reset();
+      setPaymentEnabled(false);
+      setScreen("rewards");
+      broadcastReaderStatus("idle");
     }
 
     window.addEventListener("cashier-cancel-checkout", handleCancel);
     return () =>
-        window.removeEventListener("cashier-cancel-checkout", handleCancel);
-    }, []);
+      window.removeEventListener("cashier-cancel-checkout", handleCancel);
+  }, []);
 
-
-    /* -------------------------------------------------------
-    ⭐ LISTEN FOR CASHIER RECEIPT DONE (close receipt modal)
-    ------------------------------------------------------- */
-    useEffect(() => {
+  /* -------------------------------------------------------
+     🧩 LISTEN: Cashier closed receipt modal
+     → Reader should reset to Rewards
+     (Used for cash/manual card payments)
+  ------------------------------------------------------- */
+  useEffect(() => {
     function handleReceiptDone() {
-        terminal.reset();
-        setPaymentEnabled(false);
-        setScreen("rewards");
-        broadcastReaderStatus("idle");
+      terminal.reset();
+      setPaymentEnabled(false);
+      setScreen("rewards");
+      broadcastReaderStatus("idle");
     }
 
     window.addEventListener("cashier-receipt-done", handleReceiptDone);
     return () =>
-        window.removeEventListener("cashier-receipt-done", handleReceiptDone);
-    }, []);
-
+      window.removeEventListener("cashier-receipt-done", handleReceiptDone);
+  }, []);
 
   /* -------------------------------------------------------
-     PAYMENT SIMULATION
+     💳 PAYMENT SIMULATION (Terminal)
+     Simulates a real Stripe Terminal flow:
+     - collecting → processing → approved
+     - then either receipt options or auto-print
   ------------------------------------------------------- */
   const simulatePayment = () => {
     if (!paymentEnabled) return;
@@ -119,6 +168,7 @@ export default function CardReaderContainer({ terminal }: { terminal: any }) {
     terminal.collectPayment(Math.round(totals.total * 100), () => {
       broadcastReaderStatus("approved");
 
+      // Notify cashier-side CheckoutModal
       window.dispatchEvent(
         new CustomEvent("reader-payment-complete", {
           detail: {
@@ -130,12 +180,12 @@ export default function CardReaderContainer({ terminal }: { terminal: any }) {
 
       setScreen("approved");
 
+      // After approval, show receipt options or auto-print
       setTimeout(() => {
         if (customer) {
-          // ⭐ Customer exists → show full receipt options
           setScreen("receiptOptions");
         } else {
-          // ⭐ No customer → auto-print
+          // No customer → auto-print
           window.dispatchEvent(
             new CustomEvent("reader-receipt-choice", {
               detail: { method: "print" },
@@ -148,7 +198,7 @@ export default function CardReaderContainer({ terminal }: { terminal: any }) {
   };
 
   /* -------------------------------------------------------
-     RENDER
+     🎨 RENDER — Reader UI
   ------------------------------------------------------- */
   return (
     <div className="border rounded-lg bg-gray-50 shadow-inner p-4 h-[500px] flex flex-col justify-between text-gray-700">
@@ -252,17 +302,17 @@ export default function CardReaderContainer({ terminal }: { terminal: any }) {
         <ReaderReceiptOptionsScreen
           customerExists={!!customer}
           onDone={(method) => {
-            // ⭐ Tell cashier what customer chose
+            // Notify cashier which receipt method was chosen
             window.dispatchEvent(
               new CustomEvent("reader-receipt-choice", {
                 detail: { method },
               })
             );
 
-            // ⭐ Show Thank You screen
+            // Show Thank You screen
             setScreen("thankYou");
 
-            // ⭐ After 2 seconds → reset to Rewards
+            // Reset reader after short delay
             setTimeout(() => {
               terminal.reset();
               setPaymentEnabled(false);
@@ -271,14 +321,13 @@ export default function CardReaderContainer({ terminal }: { terminal: any }) {
             }, 2000);
           }}
           onTimeout={() => {
-            // ⭐ Timeout → treat like "no receipt chosen"
+            // No selection → treat as "none"
             window.dispatchEvent(
               new CustomEvent("reader-receipt-choice", {
                 detail: { method: "none" },
               })
             );
 
-            // ⭐ Show Thank You screen
             setScreen("thankYou");
 
             setTimeout(() => {
@@ -313,7 +362,9 @@ export default function CardReaderContainer({ terminal }: { terminal: any }) {
       {screen === "thankYou" && (
         <div className="flex flex-col items-center justify-center h-full space-y-4">
           <p className="text-2xl font-semibold text-green-600">Thank you!</p>
-          <p className="text-gray-500 text-sm">Your receipt is being processed…</p>
+          <p className="text-gray-500 text-sm">
+            Your receipt is being processed…
+          </p>
         </div>
       )}
     </div>

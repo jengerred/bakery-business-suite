@@ -7,9 +7,19 @@
 import { Product } from "../lib/products";
 
 /* -------------------------------------------------------
-   🪟 ProductOptionsModal
+   🪟 ProductOptionsModal (Cashier-Side)
    Modal for adjusting quantity or deleting a product
    before adding/updating it in the cart.
+
+   Responsibilities:
+   - Show product name + price
+   - Allow quantity adjustments
+   - Allow deletion (only if product already in cart)
+   - Save changes and close modal
+
+   NOTE:
+   - This is the cashier-facing modal.
+   - The reader has no equivalent modal.
 ------------------------------------------------------- */
 type ProductOptionsModalProps = {
   product: Product;                                // Product being edited
@@ -28,12 +38,13 @@ export default function ProductOptionsModal({
   onSave,
   onDelete,
 }: ProductOptionsModalProps) {
+
   // Safety check — shouldn't happen, but prevents rendering errors
   if (!product) return null;
 
-  /* ------------------------------
+  /* -------------------------------------------------------
      🎨 Render Modal UI
-  ------------------------------ */
+  ------------------------------------------------------- */
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
       <div className="bg-white p-6 rounded-lg w-80 shadow">
