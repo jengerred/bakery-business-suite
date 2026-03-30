@@ -83,9 +83,7 @@ export default function POSPageContent() {
   ------------------------------ */
   return (
     <div className="p-4">
-
-      {/* 🔌 Terminal Status Indicator */}
-      <ReaderStatusBadge status={terminal.status} />
+         {/* -------------------------------------------------------       
 
       {/* 🧱 Main POS Grid Layout */}
       <POSGrid

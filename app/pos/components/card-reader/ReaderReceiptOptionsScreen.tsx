@@ -4,10 +4,6 @@ import { useEffect } from "react";
 
 /* -------------------------------------------------------
    🧾 Types
-   Props describe:
-   - Whether the customer has an account
-   - Callback for chosen receipt method
-   - Callback for timeout (no interaction)
 ------------------------------------------------------- */
 type Props = {
   customerExists: boolean;
@@ -18,16 +14,6 @@ type Props = {
 /* -------------------------------------------------------
    🧱 ReaderReceiptOptionsScreen
    Customer-facing receipt selection screen.
-
-   Responsibilities:
-   - Show available receipt options
-   - Auto-timeout after 10 seconds of inactivity
-   - Notify parent which method was chosen
-   - Support reduced options when no customer exists
-
-   NOTE:
-   - This screen is intentionally minimal to match real
-     Stripe Terminal UX patterns.
 ------------------------------------------------------- */
 export default function ReaderReceiptOptionsScreen({
   customerExists,
@@ -36,84 +22,68 @@ export default function ReaderReceiptOptionsScreen({
 }: Props) {
 
   /* -------------------------------------------------------
-     ⏱️ AUTO-TIMEOUT
-     If the customer does nothing for 10 seconds:
-     → Treat as "none"
-     → Parent handles thank-you + reset flow
+     ⏱️ SNAPPY AUTO-ADVANCE
+     Reduced from 10 seconds to 2.5 seconds.
+     🛠️ FIX: We now call onDone("print") instead of onTimeout.
+     This ensures the cashier's Print button is enabled by default
+     if the customer walks away without choosing.
   ------------------------------------------------------- */
   useEffect(() => {
     const timer = setTimeout(() => {
-      onTimeout();
-    }, 10000);
+      // Default to "print" mode so cashier can handle it
+      onDone("print"); 
+    }, 2500);
 
     return () => clearTimeout(timer);
-  }, [onTimeout]);
+  }, [onDone]);
 
-  /* -------------------------------------------------------
-     🎨 UI — Receipt Options
-     Customer with account:
-       - Print
-       - Email
-       - Text
-       - None
-     Guest customer:
-       - Print
-       - None
-  ------------------------------------------------------- */
   return (
-    <div className="flex flex-col items-center justify-center h-full space-y-6">
+    <div className="flex flex-col items-center justify-center h-full space-y-6 bg-white p-4">
 
-      <h2 className="text-xl font-semibold">Receipt Options</h2>
+      <h2 className="text-2xl font-black text-slate-800 uppercase tracking-tight">
+        Receipt Options
+      </h2>
 
-      {customerExists ? (
-        /* ⭐ Full options for known customers */
-        <div className="flex flex-col space-y-3 w-full px-6">
-          <button
-            onClick={() => onDone("print")}
-            className="w-full py-2 bg-gray-800 text-white rounded"
-          >
-            Print Receipt
-          </button>
+      <div className="flex flex-col space-y-3 w-full px-4">
+        {/* ⭐ PRIMARY OPTION */}
+        <button
+          onClick={() => onDone("print")}
+          className="w-full py-4 bg-slate-800 text-white rounded-2xl font-bold text-lg shadow-lg active:scale-95 transition-all"
+        >
+          Print Receipt
+        </button>
 
-          <button
-            onClick={() => onDone("email")}
-            className="w-full py-2 bg-blue-600 text-white rounded"
-          >
-            Email Receipt
-          </button>
+        {customerExists && (
+          <>
+            <button
+              onClick={() => onDone("email")}
+              className="w-full py-4 bg-blue-600 text-white rounded-2xl font-bold text-lg shadow-lg active:scale-95 transition-all"
+            >
+              Email Receipt
+            </button>
 
-          <button
-            onClick={() => onDone("text")}
-            className="w-full py-2 bg-green-600 text-white rounded"
-          >
-            Text Receipt
-          </button>
+            <button
+              onClick={() => onDone("text")}
+              className="w-full py-4 bg-green-600 text-white rounded-2xl font-bold text-lg shadow-lg active:scale-95 transition-all"
+            >
+              Text Receipt
+            </button>
+          </>
+        )}
 
-          <button
-            onClick={() => onDone("none")}
-            className="w-full py-2 bg-gray-300 text-gray-700 rounded"
-          >
-            No Receipt
-          </button>
-        </div>
-      ) : (
-        /* ⭐ Guest customer → limited options */
-        <div className="flex flex-col space-y-3 w-full px-6">
-          <button
-            onClick={() => onDone("print")}
-            className="w-full py-2 bg-gray-800 text-white rounded"
-          >
-            Print Receipt
-          </button>
+        {/* ⭐ DECLINE OPTION */}
+        <button
+          onClick={() => onDone("none")}
+          className="w-full py-3 bg-slate-100 text-slate-500 rounded-2xl font-bold active:scale-95 transition-all"
+        >
+          No Receipt
+        </button>
+      </div>
 
-          <button
-            onClick={() => onDone("none")}
-            className="w-full py-2 bg-gray-300 text-gray-700 rounded"
-          >
-            No Receipt
-          </button>
-        </div>
-      )}
+      {/* ⏳ Snappy Status Hint */}
+      <p className="text-[10px] text-slate-400 uppercase tracking-widest animate-pulse font-bold">
+        Auto-printing in 2s...
+      </p>
     </div>
   );
 }

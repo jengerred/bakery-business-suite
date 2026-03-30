@@ -32,7 +32,7 @@ export default function OrderHistory() {
   const { orderHistory, clearHistory } = useOrderHistoryContext();
 
   return (
-    <div className="p-4 border rounded-lg bg-white shadow">
+    <div className="p-6 space-y-6 bg-white border rounded-lg shadow-sm min-h-[600px]">
       <h2 className="text-xl font-semibold mb-4">Order History</h2>
 
       {/* -------------------------------------------------------

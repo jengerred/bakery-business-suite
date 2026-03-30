@@ -26,10 +26,13 @@ export default function ReaderRewardsScreen({
   onSkip: () => void;                // Customer chose to skip rewards
 }) {
 
+
+  
   /* -------------------------------------------------------
      📝 Local Input State
   ------------------------------------------------------- */
   const [value, setValue] = useState("");
+
 
   /* -------------------------------------------------------
      🎨 UI — Rewards Prompt
