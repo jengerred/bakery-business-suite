@@ -31,8 +31,6 @@ export default function ShopPage() {
     setIsCartOpen(true);
   };
 
-  // Grouping products so we don't show "Single" and "Dozen" as two different cards
-  // We'll show one card per flavor (Chocolate Chip, Brownie, etc.)
   const flavors = [
     { name: "Chocolate Chip Cookies", singleId: 101, dozenId: 102 },
     { name: "Brownies", singleId: 201, dozenId: 202 },
@@ -41,30 +39,61 @@ export default function ShopPage() {
 
   return (
     <div className="min-h-screen bg-stone-50">
+      <style jsx global>{`
+        @keyframes ticker {
+          0% { transform: translateX(50%); } 
+          100% { transform: translateX(-100%); }
+        }
 
-{/* 📢 THE PROMINENT TICKER */}
-<div className="relative w-full h-12 overflow-hidden bg-stone-950 flex items-center border-b-2 border-violet-500 glow-line-heavy z-50">
-  
-<div className="animate-ticker">
-  <p className="text-sm font-black uppercase tracking-[0.4em] text-white flex items-center">
-    <span>
-      <span className="text-violet-400 mr-2">📍 Pickup:</span> 
-      Fridays @ 12:00PM (Nextech High)
-    </span>
+        .animate-ticker {
+          display: inline-block;
+          white-space: nowrap;
+          animation: ticker 18s linear infinite; 
+        }
 
-    <span className="mx-40 text-stone-800">//</span> 
+        .glow-line-heavy {
+          box-shadow: 0 4px 20px -2px rgba(167, 139, 250, 0.7);
+        }
+      `}</style>
 
-    <span>
-      <span className="text-violet-400 mr-2">📦 Shipping:</span> 
-      All orders sent every Friday
-    </span>
-    
-    {/* REDUCE THIS to make the next loop start sooner */}
-    <span className="ml-[20vw]"></span> 
-  </p>
-</div>
+      {/* 📢 LOGISTICS ONLY TICKER */}
+      <div className="relative w-full h-12 overflow-hidden bg-stone-950 flex items-center border-b-2 border-violet-500 glow-line-heavy z-50">
+        <div className="animate-ticker">
+          <p className="text-sm font-black uppercase tracking-[0.4em] text-white flex items-center">
+            
+            {/* LOGISTICS SECTION 1 */}
+            <span>
+              <span className="text-violet-400 mr-2">📍 Pickup:</span> 
+              Fridays @ 12:00PM (Nextech High)
+            </span>
 
-    </div>
+            <span className="mx-20 text-stone-800">//</span> 
+
+            {/* LOGISTICS SECTION 2 */}
+            <span>
+              <span className="text-violet-400 mr-2">📦 Shipping:</span> 
+              All orders sent every Friday
+            </span>
+
+            <span className="mx-20 text-stone-800">//</span> 
+
+            {/* LOGISTICS SECTION 3 (Loop support) */}
+            <span>
+              <span className="text-violet-400 mr-2">📍 Pickup:</span> 
+              Fridays @ 12:00PM (Nextech High)
+            </span>
+
+            <span className="mx-20 text-stone-800">//</span> 
+
+            <span>
+              <span className="text-violet-400 mr-2">📦 Shipping:</span> 
+              All orders sent every Friday
+            </span>
+            
+            <span className="ml-[20vw]"></span> 
+          </p>
+        </div>
+      </div>
 
       <nav className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b px-8 py-4 flex justify-between items-center">
         <Link href="/shop" className="text-2xl font-black text-violet-600 uppercase tracking-tighter">

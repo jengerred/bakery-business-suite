@@ -2,6 +2,11 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { loadStripe } from "@stripe/stripe-js";
+import { Elements, PaymentElement, useStripe, useElements } from "@stripe/react-stripe-js";
+
+// Initialize Stripe outside component
+const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
 
 export default function CheckoutPage() {
   const [method, setMethod] = useState<"pickup" | "shipping">("pickup");
@@ -10,6 +15,8 @@ export default function CheckoutPage() {
     address: "", apt: "", city: "", state: "", zip: ""
   });
   const [errors, setErrors] = useState<string[]>([]);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [clientSecret, setClientSecret] = useState("");
 
   const cartSubtotal = 20.00; 
   const shippingFee = method === "shipping" ? 12.00 : 0;
@@ -30,8 +37,35 @@ export default function CheckoutPage() {
     return newErrors.length === 0;
   };
 
-  const handleOnlinePayment = () => {
-    if (validate()) alert("Redirecting to Secure Card Payment...");
+  const handleOnlinePayment = async () => {
+    if (!validate()) return;
+    
+    setIsProcessing(true);
+    try {
+      const response = await fetch("/api/create-payment-intent", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          amount: Math.round(total * 100),
+          name: `${formData.firstName} ${formData.lastName}`,
+          email: formData.email,
+          phone: formData.phone,
+          method: method,
+        }),
+      });
+
+      const data = await response.json();
+      if (data.clientSecret) {
+        setClientSecret(data.clientSecret);
+      } else {
+        throw new Error(data.error || "Failed to initialize payment");
+      }
+    } catch (err) {
+      console.error("Payment Error:", err);
+      alert("There was an issue connecting to Stripe. Please try again.");
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const handlePayLater = () => {
@@ -70,12 +104,20 @@ export default function CheckoutPage() {
             <section className="bg-white p-8 rounded-[2rem] border border-stone-200 shadow-sm">
               <h2 className="text-lg font-bold mb-6 text-violet-900">1. Delivery Method</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <button onClick={() => setMethod("pickup")} className={`p-6 rounded-2xl border-2 transition-all text-left ${method === "pickup" ? "border-violet-600 bg-violet-50" : "border-stone-100 opacity-60"}`}>
+                <button 
+                    disabled={!!clientSecret}
+                    onClick={() => setMethod("pickup")} 
+                    className={`p-6 rounded-2xl border-2 transition-all text-left ${method === "pickup" ? "border-violet-600 bg-violet-50" : "border-stone-100 opacity-60"}`}
+                >
                   <span className="text-3xl mb-2 block">🛍️</span>
                   <span className="font-bold">Local Pickup</span>
                   <p className="text-xs text-violet-600 font-semibold mt-1">Nextech High · Fri @ 12pm</p>
                 </button>
-                <button onClick={() => setMethod("shipping")} className={`p-6 rounded-2xl border-2 transition-all text-left ${method === "shipping" ? "border-violet-600 bg-violet-50" : "border-stone-100 opacity-60"}`}>
+                <button 
+                    disabled={!!clientSecret}
+                    onClick={() => setMethod("shipping")} 
+                    className={`p-6 rounded-2xl border-2 transition-all text-left ${method === "shipping" ? "border-violet-600 bg-violet-50" : "border-stone-100 opacity-60"}`}
+                >
                   <span className="text-3xl mb-2 block">📦</span>
                   <span className="font-bold">Nationwide Shipping</span>
                   <p className="text-xs text-violet-600 font-semibold mt-1">Freshly Sent Fridays</p>
@@ -86,19 +128,19 @@ export default function CheckoutPage() {
             <section className="bg-white p-8 rounded-[2rem] border border-stone-200 shadow-sm space-y-6">
               <h2 className="text-lg font-bold text-violet-900">2. Customer Details</h2>
               <div className="grid grid-cols-2 gap-4">
-                <input type="text" placeholder="First Name" onChange={(e)=>setFormData({...formData, firstName: e.target.value})} className={`p-4 bg-stone-50 rounded-xl border ${errors.includes('firstName') ? 'border-red-500' : 'border-stone-200'} outline-none focus:border-violet-600`} />
-                <input type="text" placeholder="Last Name" onChange={(e)=>setFormData({...formData, lastName: e.target.value})} className={`p-4 bg-stone-50 rounded-xl border ${errors.includes('lastName') ? 'border-red-500' : 'border-stone-200'} outline-none focus:border-violet-600`} />
+                <input type="text" placeholder="First Name" value={formData.firstName} onChange={(e)=>setFormData({...formData, firstName: e.target.value})} className={`p-4 bg-stone-50 rounded-xl border ${errors.includes('firstName') ? 'border-red-500' : 'border-stone-200'} outline-none focus:border-violet-600 transition-all`} />
+                <input type="text" placeholder="Last Name" value={formData.lastName} onChange={(e)=>setFormData({...formData, lastName: e.target.value})} className={`p-4 bg-stone-50 rounded-xl border ${errors.includes('lastName') ? 'border-red-500' : 'border-stone-200'} outline-none focus:border-violet-600 transition-all`} />
               </div>
 
               {method === "shipping" && (
                 <div className="space-y-4 pt-4 border-t border-stone-100 animate-in fade-in">
-                  <input type="text" placeholder="Street Address" onChange={(e)=>setFormData({...formData, address: e.target.value})} className={`w-full p-4 bg-stone-50 rounded-xl border ${errors.includes('address') ? 'border-red-500' : 'border-stone-200'} outline-none focus:border-violet-600`} />
-                  <input type="text" placeholder="Apt, Suite, Unit (Optional)" onChange={(e)=>setFormData({...formData, apt: e.target.value})} className="w-full p-4 bg-stone-50 rounded-xl border border-stone-200 outline-none focus:border-violet-600" />
+                  <input type="text" placeholder="Street Address" value={formData.address} onChange={(e)=>setFormData({...formData, address: e.target.value})} className={`w-full p-4 bg-stone-50 rounded-xl border ${errors.includes('address') ? 'border-red-500' : 'border-stone-200'} outline-none focus:border-violet-600`} />
+                  <input type="text" placeholder="Apt, Suite, Unit (Optional)" value={formData.apt} onChange={(e)=>setFormData({...formData, apt: e.target.value})} className="w-full p-4 bg-stone-50 rounded-xl border border-stone-200 outline-none focus:border-violet-600" />
                   <div className="grid grid-cols-2 gap-4">
-                    <input type="text" placeholder="City" onChange={(e)=>setFormData({...formData, city: e.target.value})} className={`p-4 bg-stone-50 rounded-xl border ${errors.includes('city') ? 'border-red-500' : 'border-stone-200'} outline-none focus:border-violet-600`} />
+                    <input type="text" placeholder="City" value={formData.city} onChange={(e)=>setFormData({...formData, city: e.target.value})} className={`p-4 bg-stone-50 rounded-xl border ${errors.includes('city') ? 'border-red-500' : 'border-stone-200'} outline-none focus:border-violet-600`} />
                     <div className="grid grid-cols-2 gap-2">
-                        <input type="text" placeholder="ST" onChange={(e)=>setFormData({...formData, state: e.target.value})} className={`p-4 bg-stone-50 rounded-xl border ${errors.includes('state') ? 'border-red-500' : 'border-stone-200'} text-center`} />
-                        <input type="text" placeholder="Zip" onChange={(e)=>setFormData({...formData, zip: e.target.value})} className={`p-4 bg-stone-50 rounded-xl border ${errors.includes('zip') ? 'border-red-500' : 'border-stone-200'}`} />
+                        <input type="text" placeholder="ST" value={formData.state} onChange={(e)=>setFormData({...formData, state: e.target.value})} className={`p-4 bg-stone-50 rounded-xl border ${errors.includes('state') ? 'border-red-500' : 'border-stone-200'} text-center`} />
+                        <input type="text" placeholder="Zip" value={formData.zip} onChange={(e)=>setFormData({...formData, zip: e.target.value})} className={`p-4 bg-stone-50 rounded-xl border ${errors.includes('zip') ? 'border-red-500' : 'border-stone-200'}`} />
                     </div>
                   </div>
                 </div>
@@ -106,16 +148,17 @@ export default function CheckoutPage() {
 
               <div className="space-y-4 pt-4 border-t border-stone-100">
                 <p className="text-sm font-bold text-violet-900">How should we reach you? (At least one)</p>
-                <input type="tel" placeholder="Mobile Number" onChange={(e)=>setFormData({...formData, phone: e.target.value})} className={`w-full p-4 bg-stone-50 rounded-xl border ${errors.includes('phone') ? 'border-red-200' : 'border-stone-200'} outline-none focus:border-violet-600`} />
-                <input type="email" placeholder="Email Address" onChange={(e)=>setFormData({...formData, email: e.target.value})} className={`w-full p-4 bg-stone-50 rounded-xl border ${errors.includes('email') ? 'border-red-200' : 'border-stone-200'} outline-none focus:border-violet-600`} />
+                <input type="tel" placeholder="Mobile Number" value={formData.phone} onChange={(e)=>setFormData({...formData, phone: e.target.value})} className={`w-full p-4 bg-stone-50 rounded-xl border ${errors.includes('phone') ? 'border-red-200' : 'border-stone-200'} outline-none focus:border-violet-600`} />
+                <input type="email" placeholder="Email Address" value={formData.email} onChange={(e)=>setFormData({...formData, email: e.target.value})} className={`w-full p-4 bg-stone-50 rounded-xl border ${errors.includes('email') ? 'border-red-200' : 'border-stone-200'} outline-none focus:border-violet-600`} />
               </div>
             </section>
           </div>
 
-          {/* RIGHT: SUMMARY & ACTIONS */}
+          {/* RIGHT: SUMMARY & STRIPE ELEMENT */}
           <div className="md:col-span-5">
-            <div className="bg-violet-900 text-white p-8 rounded-[2.5rem] sticky top-24 shadow-2xl shadow-violet-200">
+            <div className="bg-violet-900 text-white p-8 rounded-[2.5rem] sticky top-24 shadow-2xl shadow-violet-200 transition-all duration-500">
               <h3 className="text-xl font-bold mb-8 text-center text-violet-100">Order Summary</h3>
+              
               <div className="space-y-4 mb-8">
                 <div className="flex justify-between text-sm font-medium text-violet-200">
                   <span>Subtotal</span>
@@ -133,22 +176,49 @@ export default function CheckoutPage() {
                 </div>
               </div>
 
+              {/* ACTION AREA */}
               <div className="space-y-3">
-                <button 
-                    onClick={handleOnlinePayment}
-                    className="w-full py-5 bg-white text-violet-900 rounded-2xl font-bold text-lg hover:shadow-xl transition-all active:scale-[0.96]"
-                >
-                    Pay Now
-                </button>
-
-                {/* Conditional Pay Later Button for Pickup Only */}
-                {method === "pickup" && (
-                    <button 
-                        onClick={handlePayLater}
-                        className="w-full py-4 bg-violet-800 text-white border-2 border-violet-700 rounded-2xl font-bold text-sm hover:bg-violet-700 transition-all"
+                {clientSecret ? (
+                  <div className="animate-in fade-in zoom-in-95 duration-300">
+                    <Elements 
+                        stripe={stripePromise} 
+                        options={{ 
+                            clientSecret, 
+                            appearance: { 
+                                theme: 'night', 
+                                variables: { colorPrimary: '#ffffff', colorBackground: '#2e1065' } 
+                            } 
+                        }}
                     >
-                        Pay in Person
+                      <StripeForm total={total} />
+                    </Elements>
+                    <button 
+                        onClick={() => setClientSecret("")}
+                        className="w-full mt-4 text-xs font-bold text-violet-300 hover:text-white"
+                    >
+                        ← Change Payment Method
                     </button>
+                  </div>
+                ) : (
+                  <>
+                    <button 
+                        onClick={handleOnlinePayment}
+                        disabled={isProcessing}
+                        className="w-full py-5 bg-white text-violet-900 rounded-2xl font-bold text-lg hover:shadow-xl transition-all active:scale-[0.96] disabled:opacity-50"
+                    >
+                        {isProcessing ? "Connecting..." : "Pay Now"}
+                    </button>
+
+                    {method === "pickup" && (
+                        <button 
+                            onClick={handlePayLater}
+                            disabled={isProcessing}
+                            className="w-full py-4 bg-violet-800 text-white border-2 border-violet-700 rounded-2xl font-bold text-sm hover:bg-violet-700 transition-all disabled:opacity-50"
+                        >
+                            Pay in Person
+                        </button>
+                    )}
+                  </>
                 )}
               </div>
               
@@ -164,5 +234,44 @@ export default function CheckoutPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+// Inner Component for Stripe Elements
+function StripeForm({ total }: { total: number }) {
+  const stripe = useStripe();
+  const elements = useElements();
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!stripe || !elements) return;
+
+    setLoading(true);
+    const { error } = await stripe.confirmPayment({
+      elements,
+      confirmParams: {
+        return_url: `${window.location.origin}/order-success`,
+      },
+    });
+
+    if (error) {
+      setErrorMessage(error.message || "An unexpected error occurred.");
+      setLoading(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <PaymentElement />
+      {errorMessage && <div className="text-red-400 text-xs font-bold bg-red-900/20 p-3 rounded-lg">{errorMessage}</div>}
+      <button 
+        disabled={!stripe || loading}
+        className="w-full py-5 bg-emerald-500 text-white rounded-2xl font-bold text-lg hover:bg-emerald-400 transition-all shadow-lg shadow-emerald-900/20"
+      >
+        {loading ? "Processing..." : `Confirm $${total.toFixed(2)}`}
+      </button>
+    </form>
   );
 }
