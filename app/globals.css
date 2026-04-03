@@ -52,11 +52,15 @@
   }
 }
 
-@keyframes ticker {
-  /* Changed from 100% to 50% so it starts in the middle-right area */
-  0% { transform: translateX(50%); } 
-  100% { transform: translateX(-100%); }
-}
+   @keyframes ticker {
+          0% { transform: translateX(10%); } 
+          100% { transform: translateX(-100%); }
+        }
+        .animate-ticker {
+          display: inline-block;
+          white-space: nowrap;
+          animation: ticker 25s linear infinite; 
+        }
 
 .animate-ticker {
   display: inline-block;
