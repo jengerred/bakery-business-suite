@@ -57,15 +57,15 @@ function POSFlavorCard({ flavor, single, dozen, onAdd }: any) {
 
       {/* 📝 CONTENT SECTION */}
       <div className="p-4 flex flex-col flex-1 bg-white/80">
-        <div className="mb-3 text-center">
-          {/* Removed line-clamp to ensure the full name shows */}
-          <h3 className="text-lg font-black text-slate-900 uppercase tracking-tighter leading-[1.1] italic">
-            {flavor}
-          </h3>
-          <p className="text-violet-600 text-[8px] font-black uppercase tracking-[0.3em] mt-1">
-            Mother's Secret Recipe
-          </p>
-        </div>
+     <div className="mb-3 text-center min-h-[60px] flex flex-col justify-center">
+  <h3 className="text-lg font-black text-slate-900 uppercase tracking-tighter leading-[1.1] italic">
+    {flavor}
+  </h3>
+  <p className="text-violet-600 text-[8px] font-black uppercase tracking-[0.3em] mt-1">
+    Mother's Secret Recipe
+  </p>
+</div>
+
 
         {/* ↔️ TOGGLE SWITCH - Compact style */}
         <div className="flex bg-violet-400/20 p-1 rounded-xl mb-4 relative border border-violet-400/30">

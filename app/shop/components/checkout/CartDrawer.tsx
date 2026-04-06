@@ -75,21 +75,28 @@ export default function CartDrawer({
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #e5e7eb; border-radius: 10px; }
       `}</style>
       
-      <div className="absolute inset-0 bg-stone-950/85 backdrop-blur-sm" onClick={onClose} />
+      <div className="absolute inset-0 bg-violet-400/80 backdrop-blur-sm" onClick={onClose} />
       
       <div className="relative w-full max-w-xl max-h-[95vh] bg-white rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-300">
         
         {/* HEADER */}
         <div className="px-8 pt-8 pb-6 border-b border-stone-100 relative shrink-0 text-center">
           {view !== "success" && (
-            <button 
-              onClick={onClose}
-              className="absolute top-8 left-8 text-[10px] font-black uppercase tracking-[0.15em] text-violet-600 hover:text-violet-800 transition-all flex items-center gap-1 group"
-            >
-              <span className="text-xs group-hover:-translate-x-1 transition-transform">←</span>
-              Back
-            </button>
-          )}
+  <div className="p-3 bg-violet-100/50 rounded-3xl border-2 border-violet-600 text-center w-50 hover:bg-violet-200">
+    <button
+      onClick={() => {
+        setView("methods");
+        setShowErrors(false);
+        onClose();
+      }}
+      className="p-1 absolute top-8 left-8 text-[10px] font-black uppercase tracking-[0.15em] text-violet-600 hover:text-violet-800 transition-all flex items-center gap-2 group"
+    >
+      <span className="pl-2 mb-1 text-sm group-hover:-translate-x-1 transition-transform">←</span>
+      Continue Shopping
+    </button>
+  </div>
+)}
+
           
           <h1 className="text-sm font-bold text-stone-900 leading-tight mt-6">
             Veronica Bowens <br/>
@@ -102,7 +109,8 @@ export default function CartDrawer({
           
           {/* VIEW 1: METHOD SELECTION */}
           {view === "methods" && (
-            <div className="space-y-8">
+            <div className="p-1">
+              
               <OrderSummary 
                 cart={cart} 
                 method={null} 
@@ -112,8 +120,11 @@ export default function CartDrawer({
                 onDecrement={onDecrement}
               />
               <div className="space-y-3">
-                <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-violet-600">Delivery Method</h3>
-                <button onClick={() => { setMethod("pickup"); setView("details"); }} className="w-full p-5 bg-white border-2 border-stone-100 rounded-3xl hover:border-violet-600 transition-all flex items-center justify-between group">
+                <div className="p-5 rounded-3xl border-2 border-violet-300/50 border-dashed bg-violet-100 shadow-inner">
+ 
+                <h3 className="mb-2 text-[11px] font-black uppercase tracking-[0.2em] text-violet-600">Pickup or Shipping?</h3>
+               
+                <button onClick={() => { setMethod("pickup"); setView("details"); }} className="w-full p-5 bg-white border-2 border-violet-200 rounded-3xl hover:border-violet-600 transition-all flex items-center justify-between group">
                   <div className="flex items-center gap-4">
                     <span className="text-3xl">🛍️</span>
                     <div className="text-left">
@@ -123,7 +134,8 @@ export default function CartDrawer({
                   </div>
                   <span className="text-stone-300 group-hover:text-violet-600 font-bold">→</span>
                 </button>
-                <button onClick={() => { setMethod("shipping"); setView("details"); }} className="w-full p-5 bg-white border-2 border-stone-100 rounded-3xl hover:border-violet-600 transition-all flex items-center justify-between group">
+
+                <button onClick={() => { setMethod("shipping"); setView("details"); }} className="mt-1 w-full p-5 bg-white border-2 border-violet-200 rounded-3xl hover:border-violet-600 transition-all flex items-center justify-between group">
                   <div className="flex items-center gap-4">
                     <span className="text-3xl">📦</span>
                     <div className="text-left">
@@ -134,29 +146,69 @@ export default function CartDrawer({
                   <span className="text-stone-300 group-hover:text-violet-600 font-bold">→</span>
                 </button>
               </div>
+              </div>
             </div>
           )}
 
           {/* VIEW 2: DETAILS & SUMMARY */}
           {view === "details" && (
-            <div className="space-y-8">
-              <div className="space-y-3">
-                <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-violet-600">Customer Details</h3>
-                <input value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} className={inputClass(formData.name)} placeholder="Full Name" />
+            <div className="space-y-3">
+              <div className="mb-8 p-5 rounded-3xl border-2 border-violet-300/50 border-dashed bg-violet-100 shadow-inner space-y-3">
+
+                <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-violet-600">
+                  {method === "shipping" ? "Shipping Details" : "Pickup Details"}
+                </h3>
+
+                <input 
+                  value={formData.name} 
+                  onChange={(e) => setFormData({...formData, name: e.target.value})} 
+                  className={inputClass(formData.name)} 
+                  placeholder="Full Name" 
+                />
+
                 <div className="grid grid-cols-2 gap-3">
-                  <input value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})} className={inputClass(formData.phone)} placeholder="Phone" />
-                  <input value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} className={inputClass(formData.email)} placeholder="Email" />
+                  <input 
+                    value={formData.phone} 
+                    onChange={(e) => setFormData({...formData, phone: e.target.value})} 
+                    className={inputClass(formData.phone)} 
+                    placeholder="Phone" 
+                  />
+                  <input 
+                    value={formData.email} 
+                    onChange={(e) => setFormData({...formData, email: e.target.value})} 
+                    className={inputClass(formData.email)} 
+                    placeholder="Email" 
+                  />
                 </div>
+
                 {method === "shipping" && (
-                   <div className="space-y-3 animate-in fade-in slide-in-from-top-2">
-                     <input value={formData.address} onChange={(e) => setFormData({...formData, address: e.target.value})} className={inputClass(formData.address)} placeholder="Shipping Address" />
-                     <div className="grid grid-cols-2 gap-3">
-                        <input value={formData.city} onChange={(e) => setFormData({...formData, city: e.target.value})} className={inputClass(formData.city)} placeholder="City" />
-                        <input value={formData.zip} onChange={(e) => setFormData({...formData, zip: e.target.value})} className={inputClass(formData.zip)} placeholder="Zip Code" />
-                     </div>
-                   </div>
+                  <div className="space-y-3 animate-in fade-in slide-in-from-top-2">
+                    <input 
+                      value={formData.address} 
+                      onChange={(e) => setFormData({...formData, address: e.target.value})} 
+                      className={inputClass(formData.address)} 
+                      placeholder="Shipping Address" 
+                    />
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <input 
+                        value={formData.city} 
+                        onChange={(e) => setFormData({...formData, city: e.target.value})} 
+                        className={inputClass(formData.city)} 
+                        placeholder="City" 
+                      />
+                      <input 
+                        value={formData.zip} 
+                        onChange={(e) => setFormData({...formData, zip: e.target.value})} 
+                        className={inputClass(formData.zip)} 
+                        placeholder="Zip Code" 
+                      />
+                    </div>
+                  </div>
                 )}
+
               </div>
+
 
               <OrderSummary 
                 cart={cart} 
@@ -170,7 +222,7 @@ export default function CartDrawer({
 
               <div className="grid grid-cols-1 gap-3">
                 <button onClick={() => handleAction("payment")} className="w-full py-5 bg-violet-600 text-white rounded-[2rem] font-bold uppercase tracking-[0.2em] shadow-xl hover:scale-[1.02] transition-all">
-                  Proceed to Payment
+                  Pay Now
                 </button>
                 {method === 'pickup' && (
                   <button onClick={() => handleAction("success")} className="w-full py-5 bg-white border-2 border-stone-200 text-stone-600 rounded-[2rem] font-bold uppercase tracking-[0.2em] hover:bg-stone-50 transition-all">

@@ -66,14 +66,15 @@ export default function ShopPage() {
   const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
 
   return (
-    <div className="min-h-screen bg-violet-600/50">
+    <div className="min-h-screen bg-black">
       {/* Reusable Logistics Header */}
       <LogisticsTicker />
 
       {/* Reusable Navbar */}
       <ShopNavbar cartCount={totalItems} onOpenCart={() => setIsCartOpen(true)} />
 
-      <main className="max-w-7xl mx-auto px-8 py-16">
+     <main className="max-w-7xl mx-auto px-8 py-16 flex items-center justify-center min-h-[70vh]">
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
           {flavors.map((flavor) => {
             const single = products.find(p => p.id === flavor.singleId);

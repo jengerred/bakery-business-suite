@@ -124,7 +124,7 @@ export default function POSGrid({
         backgroundAttachment: "fixed"
       }}
     >
-      <div className="absolute inset-0 bg-violet-600/50 pointer-events-none z-0" />
+      <div className="absolute inset-0 bg-violet-300/70 pointer-events-none z-0" />
 
       <div className="relative z-10 flex flex-col gap-4">
         {/* NAV SECTION */}
@@ -158,7 +158,7 @@ export default function POSGrid({
 
         <div className="grid grid-cols-12 gap-6 items-start">
           <div className="col-span-8">
-            <section className="p-6 border rounded-[2.5rem] bg-black/90 border-violet-500 shadow-xl shadow-violet-300 h-[480px] overflow-y-auto custom-scrollbar">
+            <section className="p-6 border rounded-[2.5rem] bg-black/80  shadow-xl shadow-violet-900 h-[480px] overflow-y-auto custom-scrollbar">
               <h2 className="text-xl font-black mb-6 text-violet-300 uppercase tracking-[0.2em] sticky top-0 py-2 z-10">
                 Our Menu
               </h2>
@@ -191,14 +191,14 @@ export default function POSGrid({
 
         {/* 🛒 CHECKOUT SECTION - SHORTER BUTTON HEIGHT */}
         <div className="mt-6">
-          <div className="p-5 bg-black/80 border border-violet-500 rounded-[2.5rem] shadow-xl shadow-violet-300">
+          <div className="p-10 pb-12 bg-violet-700 border border-violet-500 rounded-[2.5rem] 0">
               <button
                 onClick={handleBeginCheckout}
                 disabled={isOrderEmpty}
                 className={`w-full py-4 rounded-[1.8rem] font-black uppercase tracking-widest transition-all duration-300 flex flex-col items-center justify-center gap-1 active:scale-95 ${
                   isOrderEmpty
                     ? "bg-violet-900/20 text-violet-300/20 border border-transparent cursor-not-allowed" 
-               : "bg-green-500 border border-green-700 rounded-[2.5rem] shadow-xl shadow-violet-300 text-white hover:scale-[1.02]" }`}
+               : "bg-green-500 border border-green-600 rounded-[2.5rem] shadow-xl shadow-green-300 text-white hover:scale-[1.02]" }`}
               >
                 <span className="text-4xl italic tracking-tighter drop-shadow-md">
                   {isOrderEmpty ? "Empty Basket" : "Checkout"}
