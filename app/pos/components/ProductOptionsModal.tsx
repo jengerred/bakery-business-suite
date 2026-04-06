@@ -22,10 +22,10 @@ export default function ProductOptionsModal({
   onSave,
   onDelete,
 }: ProductOptionsModalProps) {
-  // Local state to manage quantity within the modal before saving
+  // Local state to manage quantity within the modal
   const [localQty, setLocalQty] = useState(quantity || 1);
 
-  // Sync local quantity if the prop changes (e.g., item added multiple times)
+  // Sync local quantity if the prop changes
   useEffect(() => {
     setLocalQty(quantity || 1);
   }, [quantity]);
@@ -33,6 +33,16 @@ export default function ProductOptionsModal({
   if (!product) return null;
 
   const finalPrice = priceOverride !== undefined ? priceOverride : product.price;
+
+  // Handle manual input changes
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = parseInt(e.target.value);
+    if (isNaN(val) || val < 1) {
+      setLocalQty(1);
+    } else {
+      setLocalQty(val);
+    }
+  };
 
   return (
     <div className="fixed inset-0 bg-violet-900/60 backdrop-blur-sm flex items-center justify-center z-50 transition-all">
@@ -53,31 +63,35 @@ export default function ProductOptionsModal({
           </div>
         </div>
 
-        {/* 🔢 QUICK QUANTITY UPDATER (Only shows if updating existing item) */}
-        {existsInCart && (
-          <div className="bg-violet-50 dark:bg-violet-900/20 p-6 rounded-[2rem] mb-8 border border-violet-100 dark:border-violet-800">
-            <div className="flex items-center justify-between">
-              <span className="font-black text-violet-400 uppercase text-xs tracking-widest">Quantity</span>
-              <div className="flex items-center gap-6">
-                <button
-                  onClick={() => setLocalQty(Math.max(1, localQty - 1))}
-                  className="w-12 h-12 flex items-center justify-center bg-white dark:bg-slate-800 border-2 border-violet-200 rounded-xl font-black text-2xl text-violet-600 active:scale-90 transition-all shadow-sm"
-                >
-                  –
-                </button>
-                <span className="text-3xl font-black w-8 text-center text-slate-800 dark:text-white tabular-nums">
-                  {localQty}
-                </span>
-                <button
-                  onClick={() => setLocalQty(localQty + 1)}
-                  className="w-12 h-12 flex items-center justify-center bg-white dark:bg-slate-800 border-2 border-violet-200 rounded-xl font-black text-2xl text-violet-600 active:scale-90 transition-all shadow-sm"
-                >
-                  +
-                </button>
-              </div>
+        {/* 🔢 QUANTITY UPDATER (Now always visible) */}
+        <div className="bg-violet-50 dark:bg-violet-900/20 p-6 rounded-[2rem] mb-8 border border-violet-100 dark:border-violet-800">
+          <div className="flex items-center justify-between">
+            <span className="font-black text-violet-400 uppercase text-xs tracking-widest">Quantity</span>
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => setLocalQty(Math.max(1, localQty - 1))}
+                className="w-12 h-12 flex items-center justify-center bg-white dark:bg-slate-800 border-2 border-violet-200 rounded-xl font-black text-2xl text-violet-600 active:scale-90 transition-all shadow-sm"
+              >
+                –
+              </button>
+              
+              {/* Manual Input Field */}
+              <input 
+                type="number"
+                value={localQty}
+                onChange={handleInputChange}
+                className="w-16 bg-transparent text-3xl font-black text-center text-slate-800 dark:text-white focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+              />
+
+              <button
+                onClick={() => setLocalQty(localQty + 1)}
+                className="w-12 h-12 flex items-center justify-center bg-white dark:bg-slate-800 border-2 border-violet-200 rounded-xl font-black text-2xl text-violet-600 active:scale-90 transition-all shadow-sm"
+              >
+                +
+              </button>
             </div>
           </div>
-        )}
+        </div>
 
         {/* 🛒 ACTION BUTTONS */}
         <div className="flex flex-col gap-4">

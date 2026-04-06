@@ -23,10 +23,10 @@ export default function ShopProductCard({
   const savings = Math.round((1 - (dozenProduct.price / (singleProduct.price * 12))) * 100);
 
   return (
-    <div className="group bg-white rounded-[2rem] overflow-hidden border border-stone-200 shadow-sm hover:shadow-xl transition-all duration-500">
+    <div className="group bg-white rounded-[2rem] overflow-hidden border border-violet-300 shadow-sm hover:shadow-xl transition-all duration-500">
       
       {/* 🖼️ IMAGE SECTION */}
-      <div className="aspect-[16/9] bg-stone-100 relative flex items-center justify-center text-5xl">
+      <div className="aspect-[16/9] bg-violet-300/90 relative flex items-center justify-center text-5xl">
         {flavorName.includes("Cookie") ? "🍪" : "🍫"}
         
         {isDozen && (

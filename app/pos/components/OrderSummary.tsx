@@ -1,7 +1,7 @@
 "use client";
 
 /* -------------------------------------------------------
-   🧺 Product Type
+   📦 Product Type
 ------------------------------------------------------- */
 import { Product } from "@/app/pos/lib/products";
 
@@ -12,14 +12,13 @@ import { useCustomer } from "@/app/pos/context/CustomerContext";
 
 /* -------------------------------------------------------
    🧾 OrderSummary (Cashier-Side)
-   Renders the list of items. Scrolling is handled by the 
-   parent container in POSGrid.tsx to prevent double bars.
 ------------------------------------------------------- */
 type OrderSummaryProps = {
   order: { product: Product; quantity: number; overridePrice?: number }[];
   onIncrease: (productId: number) => void;
   onDecrease: (productId: number) => void;
   onRemove: (productId: number) => void;
+  onUpdateQty: (productId: number, newQty: number) => void; // Added for manual input
 };
 
 export default function OrderSummary({
@@ -27,8 +26,18 @@ export default function OrderSummary({
   onIncrease,
   onDecrease,
   onRemove,
+  onUpdateQty,
 }: OrderSummaryProps) {
   const { customer } = useCustomer();
+
+  const handleInputChange = (productId: number, value: string) => {
+    const val = parseInt(value);
+    if (isNaN(val) || val < 1) {
+      onUpdateQty(productId, 1);
+    } else {
+      onUpdateQty(productId, val);
+    }
+  };
 
   return (
     <div className="flex flex-col">
@@ -42,16 +51,13 @@ export default function OrderSummary({
 
       {/* 🪹 EMPTY STATE */}
       {order.length === 0 && (
-        <div className="flex flex-col items-center justify-center py-6 bg-white/20 border-2 border-dashed border-violet-300 rounded-[2.5rem] opacity-60">
+        <div className="flex flex-col items-center justify-center py-6 bg-white/90 border-2 border-dashed border-violet-300 rounded-[2.5rem] opacity-60">
           <span className="text-3xl mb-2">🛒</span>
           <p className="text-violet-900 font-black uppercase tracking-widest text-[9px]">No items added yet.</p>
         </div>
       )}
 
-      {/* 🛒 ORDER ITEMS LIST 
-          Removed fixed heights and scrollbars from here. 
-          The parent section in POSGrid now dictates the height.
-      */}
+      {/* 🛒 ORDER ITEMS LIST */}
       <ul className="space-y-3">
         {order.map((item) => {
           const unitPrice = item.overridePrice ?? item.product.price;
@@ -62,8 +68,8 @@ export default function OrderSummary({
               key={item.product.id}
               className="flex justify-between items-center p-4 bg-white/60 backdrop-blur-sm rounded-[1.5rem] border-2 border-transparent hover:border-violet-300 transition-all shadow-sm"
             >
-              <div className="flex-1">
-                <p className="font-black text-slate-900 uppercase tracking-tighter text-sm leading-tight">
+              <div className="flex-1 min-w-0 pr-4">
+                <p className="font-black text-slate-900 uppercase tracking-tighter text-sm leading-tight truncate">
                   {item.product.name}
                 </p>
                 <p className="text-violet-600 font-black text-lg">
@@ -71,20 +77,26 @@ export default function OrderSummary({
                 </p>
               </div>
 
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
                 <div className="flex items-center bg-violet-100 rounded-xl p-1 border border-violet-200">
                   <button
                     onClick={() => onDecrease(item.product.id)}
-                    className="w-10 h-10 flex items-center justify-center bg-white text-violet-600 rounded-lg font-black text-xl hover:bg-violet-600 hover:text-white transition-all active:scale-90 shadow-sm"
+                    className="w-9 h-9 flex items-center justify-center bg-white text-violet-600 rounded-lg font-black text-xl hover:bg-violet-600 hover:text-white transition-all active:scale-90 shadow-sm"
                   >
                     –
                   </button>
-                  <span className="w-10 text-center font-black text-slate-800 text-lg tabular-nums">
-                    {item.quantity}
-                  </span>
+                  
+                  {/* 🔢 MANUAL INPUT OPTION */}
+                  <input
+                    type="number"
+                    value={item.quantity}
+                    onChange={(e) => handleInputChange(item.product.id, e.target.value)}
+                    className="w-10 bg-transparent text-center font-black text-slate-800 text-lg focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                  />
+
                   <button
                     onClick={() => onIncrease(item.product.id)}
-                    className="w-10 h-10 flex items-center justify-center bg-white text-violet-600 rounded-lg font-black text-xl hover:bg-violet-600 hover:text-white transition-all active:scale-90 shadow-sm"
+                    className="w-9 h-9 flex items-center justify-center bg-white text-violet-600 rounded-lg font-black text-xl hover:bg-violet-600 hover:text-white transition-all active:scale-90 shadow-sm"
                   >
                     +
                   </button>
@@ -92,9 +104,9 @@ export default function OrderSummary({
 
                 <button
                   onClick={() => onRemove(item.product.id)}
-                  className="w-10 h-10 flex items-center justify-center text-red-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all active:scale-75"
+                  className="w-9 h-9 flex items-center justify-center text-red-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all active:scale-75"
                 >
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M3 6h18m-2 0v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6m3 0V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
                   </svg>
                 </button>

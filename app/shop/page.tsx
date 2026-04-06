@@ -66,7 +66,7 @@ export default function ShopPage() {
   const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
 
   return (
-    <div className="min-h-screen bg-stone-50">
+    <div className="min-h-screen bg-violet-600/50">
       {/* Reusable Logistics Header */}
       <LogisticsTicker />
 
