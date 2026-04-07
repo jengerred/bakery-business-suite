@@ -69,6 +69,9 @@ export default function POSGrid({
   const { total } = calculateTotals(order);
   const isOrderEmpty = order.length === 0;
 
+  const [isNavOpen, setIsNavOpen] = useState(false);
+
+
   const handleUpdateQty = (productId: number, newQty: number) => {
     setOrder((prev: any[]) =>
       prev.map((item) =>
@@ -127,46 +130,127 @@ export default function POSGrid({
       <div className="absolute inset-0 bg-violet-300/70 pointer-events-none z-0" />
 
       <div className="relative z-10 flex flex-col gap-4">
-        {/* NAV SECTION */}
-        <div className="flex items-center justify-between px-6 py-2">
-          <div className="flex gap-3 p-1.5 bg-white/20 backdrop-blur-md rounded-2xl border border-white/30 shadow-sm">
-            <button className="relative px-6 py-2.5 bg-violet-600 text-white rounded-xl font-black uppercase tracking-widest text-xs shadow-md transition-all active:scale-95 flex items-center gap-3">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.8)]"></span>
-              </span>
-              Register 
-            </button>
-            <Link href="/pos/transactions" className="px-6 py-2.5 bg-violet-200/40 hover:bg-violet-600 hover:text-white text-violet-700 rounded-xl font-bold uppercase tracking-widest text-xs transition-all active:scale-95 flex items-center shadow-sm border border-white/20">
-              Transactions
-            </Link>
-            <Link href="/pos/employee" className="px-6 py-2.5 bg-violet-100/50 hover:bg-violet-600 hover:text-white text-violet-700 rounded-xl font-bold uppercase tracking-widest text-xs transition-all active:scale-95 flex items-center shadow-sm border border-white/20">
-              Employee
-            </Link>
-          </div>
+       
+      {/* NAV SECTION */}
+<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between px-6 py-2 gap-4">
 
-          <button onClick={() => setIsLogoutOpen(true)} className="group flex items-center gap-2 px-5 py-2.5 bg-red-500 text-white rounded-xl font-black uppercase tracking-widest text-xs shadow-lg hover:bg-red-600 transition-all active:scale-90">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="group-hover:translate-x-1 transition-transform">
-              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-              <polyline points="16 17 21 12 16 7" />
-              <line x1="21" y1="12" x2="9" y2="12" />
-            </svg>
-            Exit
-          </button>
-          <LogoutModal isOpen={isLogoutOpen} onClose={() => setIsLogoutOpen(false)} onConfirm={() => setIsLogoutOpen(false)} />
-        </div>
+  {/* LEFT SIDE: NAV BUTTONS + HAMBURGER */}
+  <div className="flex flex-col sm:flex-row sm:items-center gap-3 w-full sm:w-auto">
 
-        <div className="grid grid-cols-12 gap-6 items-start">
-          <div className="col-span-8">
+    {/* MOBILE HAMBURGER */}
+    <button
+      className="sm:hidden px-4 py-2 bg-violet-600 text-white rounded-xl font-black uppercase tracking-widest text-xs shadow-md active:scale-95"
+      onClick={() => setIsNavOpen(!isNavOpen)}
+    >
+      Menu
+    </button>
+
+    {/* DESKTOP NAV BUTTONS */}
+    <div className="hidden sm:flex gap-3 p-1.5 bg-white/20 backdrop-blur-md rounded-2xl border border-white/30 shadow-sm">
+      <button className="relative px-6 py-2.5 bg-violet-600 text-white rounded-xl font-black uppercase tracking-widest text-xs shadow-md transition-all active:scale-95 flex items-center gap-3">
+        <span className="relative flex h-2 w-2">
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+          <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.8)]"></span>
+        </span>
+        Register
+      </button>
+
+      <Link
+        href="/pos/transactions"
+        className="px-6 py-2.5 bg-violet-200/40 hover:bg-violet-600 hover:text-white text-violet-700 rounded-xl font-bold uppercase tracking-widest text-xs transition-all active:scale-95 flex items-center shadow-sm border border-white/20"
+      >
+        Transactions
+      </Link>
+
+      <Link
+        href="/pos/employee"
+        className="px-6 py-2.5 bg-violet-100/50 hover:bg-violet-600 hover:text-white text-violet-700 rounded-xl font-bold uppercase tracking-widest text-xs transition-all active:scale-95 flex items-center shadow-sm border border-white/20"
+      >
+        Employee
+      </Link>
+    </div>
+
+    {/* MOBILE DROPDOWN PANEL */}
+    {isNavOpen && (
+      <div className="sm:hidden flex flex-col gap-3 p-4 bg-white/30 backdrop-blur-xl rounded-2xl border border-white/40 shadow-lg animate-fadeIn">
+
+        <button className="relative px-6 py-2.5 bg-violet-600 text-white rounded-xl font-black uppercase tracking-widest text-xs shadow-md transition-all active:scale-95 flex items-center gap-3">
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.8)]"></span>
+          </span>
+          Register
+        </button>
+
+        <Link
+          href="/pos/transactions"
+          className="px-6 py-2.5 bg-violet-200/40 hover:bg-violet-600 hover:text-white text-violet-700 rounded-xl font-bold uppercase tracking-widest text-xs transition-all active:scale-95 flex items-center shadow-sm border border-white/20"
+        >
+          Transactions
+        </Link>
+
+        <Link
+          href="/pos/employee"
+          className="px-6 py-2.5 bg-violet-100/50 hover:bg-violet-600 hover:text-white text-violet-700 rounded-xl font-bold uppercase tracking-widest text-xs transition-all active:scale-95 flex items-center shadow-sm border border-white/20"
+        >
+          Employee
+        </Link>
+      </div>
+    )}
+  </div>
+
+  {/* RIGHT SIDE: EXIT BUTTON */}
+  <button
+    onClick={() => setIsLogoutOpen(true)}
+    className="group flex items-center gap-2 px-5 py-2.5 bg-red-500 text-white rounded-xl font-black uppercase tracking-widest text-xs shadow-lg hover:bg-red-600 transition-all active:scale-90"
+  >
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="group-hover:translate-x-1 transition-transform">
+      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+      <polyline points="16 17 21 12 16 7" />
+      <line x1="21" y1="12" x2="9" y2="12" />
+    </svg>
+    Exit
+  </button>
+
+  <LogoutModal
+    isOpen={isLogoutOpen}
+    onClose={() => setIsLogoutOpen(false)}
+    onConfirm={() => setIsLogoutOpen(false)}
+  />
+</div>
+
+       <div
+          className={`
+            grid grid-cols-1
+            gap-6
+            items-start
+            min-[850px]:grid-cols-12
+          `}
+        >
+
+         <div className="col-span-1 min-[850px]:col-span-8">
+        
+         {/* MENU SECTION */}
             <section className="p-6 border rounded-[2.5rem] bg-violet-950/90  shadow-xl shadow-violet-900 h-[480px] overflow-y-auto custom-scrollbar">
-              <h2 className="text-xl font-black mb-6 text-violet-300 uppercase tracking-[0.2em] sticky top-0 py-2 z-10">
-                Our Menu
+              <h2
+                className={`
+                  inline-block
+                  text-xl font-black text-violet-200 uppercase tracking-[0.2em]
+                  sticky top-0 z-10
+                  bg-violet-500/80 backdrop-blur-xl
+                  border border-violet-700/40
+                  px-4 py-2 rounded-xl
+                  shadow-md
+                `}
+              >
+                🧁 Our Menu 
               </h2>
+
               <ProductList onAdd={(product, qty, price) => openProductModal(product, qty, price)} />
             </section>
           </div>
 
-          <div className="col-span-4">
+          <div className="col-span-1 min-[850px]:col-span-4">
             <section className={`p-5 border rounded-[2.5rem] bg-violet-100/40 backdrop-blur-md px-6 transition-all border-violet-500 shadow-xl shadow-violet-900/50 flex flex-col relative overflow-hidden ${isExpanded ? 'h-auto' : 'h-[480px]'}`}>
               <div className="flex-1 flex flex-col min-h-0">
                 <div className="flex justify-between items-center mb-2">
