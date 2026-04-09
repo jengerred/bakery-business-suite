@@ -18,6 +18,7 @@ The backend provides a unified, secure, scalable API for all modules of the Bake
 - Stripe Payments & Webhooks
 
 The backend is implemented as a C# / .NET 8 REST API connected to a PostgreSQL database hosted on Supabase.
+The backend runs across three environments — Local, Development (Railway), and Production (Azure) — all sharing the same codebase and Supabase PostgreSQL database.
 
 All business logic, authentication, and data integrity live in this backend.
 
@@ -237,18 +238,130 @@ These models form the backbone of the bakery system.
 
 ## ⭐ 7. Deployment Plan
 
-### Backend
-Deploy C# API to:
-- Azure App Service  
-- Render  
-- Fly.io  
-- Railway  
+The backend supports three environments: **Local**, **Development/Staging**, and **Production**.  
+Each environment uses the same codebase but different environment variables, deployment targets, and API base URLs.
 
-### Database
-- Supabase PostgreSQL  
-- Automated backups  
-- Row‑level security optional  
+---
 
+## 🔧 7.1 Environments
+
+### **Local Development**
+- Run API with `dotnet run`
+- Uses `appsettings.Development.json`
+- Connects to Supabase dev database (or local Postgres if needed)
+- Frontends point to:
+http://localhost:xxxx/api
+
+---
+
+### **Development / Staging — Railway**
+**Current primary backend for testing and preview deployments**
+
+- Repo: `bakery-backend`
+- Railway auto‑deploys on push to `main` (or `dev`)
+- Environment variables stored in Railway:
+- `ASPNETCORE_ENVIRONMENT=Production` (or `Staging`)
+- `SUPABASE_DB_CONNECTION_STRING`
+- `JWT_SECRET`
+- `STRIPE_SECRET_KEY`
+- `STRIPE_WEBHOOK_SECRET`
+- Used by:
+- Local frontends for real API testing
+- Vercel preview deployments
+- QA / staging environment
+
+**API Base URL (example):**
+https://bakery-backend-xxxx.up.railway.app/api (bakery-backend-xxxx.up.railway.app in Bing)
+
+---
+
+### **Production — Azure App Service (Planned)**
+**Long‑term, business‑grade production backend**
+
+- Deployment target: Azure App Service
+- CI/CD options:
+  - GitHub Actions → Azure App Service
+  - Azure DevOps pipeline
+- Separate production environment variables:
+  - `ASPNETCORE_ENVIRONMENT=Production`
+  - Production Supabase connection string
+  - Stripe **live mode** keys
+- Railway remains the staging environment
+
+**API Base URL (planned):**
+https://api.bakery-suite.com/api
+
+
+---
+
+## 🗄️ 7.2 Database
+
+### **Primary Database: Supabase PostgreSQL**
+- Shared across environments initially
+- `public` schema for core tables
+- Automated backups enabled
+- Optional:
+  - Separate schemas for dev/prod
+  - Separate Supabase projects later
+  - Row‑level security for customer‑facing data
+
+---
+
+## 🚀 7.3 Deployment Flow
+
+### **Short‑Term (Current Workflow)**
+1. Develop backend locally  
+2. Push to `bakery-backend` repo  
+3. Railway auto‑deploys  
+4. Test via:
+   - Railway API URL
+   - Vercel preview deployments  
+5. Frontends use Railway as the “live” backend until Azure is ready
+
+---
+
+### **Long‑Term (With Azure Production)**
+1. Feature branch → test locally  
+2. Merge to `dev` → deploy to Railway (staging)  
+3. Promote to `main` → deploy to Azure (production)  
+4. Vercel:
+   - Preview deployments → Railway  
+   - Production deployment → Azure  
+
+---
+
+## 🌐 7.4 Frontend Deployment
+
+### **Platform: Vercel (Next.js)**
+
+Apps:
+- `/pos` → POS terminal  
+- `/shop` → Online ordering  
+- `/manager` (future) → Manager dashboard  
+
+Environment variables:
+- `NEXT_PUBLIC_API_BASE_URL`  
+  - Local: `http://localhost:xxxx/api`
+  - Dev: Railway API URL
+  - Prod: Azure API URL
+
+---
+
+## ⭐ 7.5 Summary of Deployment Architecture
+
+| Layer        | Local Dev | Staging (Dev) | Production |
+|--------------|-----------|---------------|------------|
+| Backend API  | Localhost | Railway       | Azure App Service |
+| Database     | Supabase  | Supabase      | Supabase (prod schema or separate project) |
+| Frontend     | Localhost | Vercel Preview | Vercel Production |
+| Payments     | Stripe Test | Stripe Test | Stripe Live |
+
+This setup provides:
+- Fast iteration (Railway)
+- Stable production (Azure)
+- Clean separation of environments
+- Zero downtime deployments
+- Clear upgrade path as the bakery gr
 ### Frontend
 - Vercel (Next.js)  
 
