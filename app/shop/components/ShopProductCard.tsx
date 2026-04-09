@@ -1,15 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { Product } from "@/app/types/product";
 
-type Product = {
-  id: number;
-  name: string;
-  price: number;
-  description?: string;
-  taxable?: boolean;
-  imageUrl?: string; // ⭐ Add this so images work
-};
+
 
 type Props = {
   flavorName: string;

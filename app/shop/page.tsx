@@ -1,51 +1,59 @@
 "use client";
 
+/* ---------------------------------------------------------
+   Imports
+   --------------------------------------------------------- */
 import { useEffect, useState } from "react";
 import ShopProductCard from "./components/ShopProductCard";
 import CartDrawer from "./components/checkout/CartDrawer";
 import LogisticsTicker from "./components/LogisticsTicker";
 import ShopNavbar from "./components/ShopNavbar";
-import type { Product } from "../types/product"; 
+import type { Product } from "../types/product";
 
-
-
-/* ---------------------------------------------
-   Cart Item Type
-   --------------------------------------------- */
+/* ---------------------------------------------------------
+   Types
+   --------------------------------------------------------- */
 type CartItem = {
   product: Product;
   quantity: number;
 };
 
+/* ---------------------------------------------------------
+   SHOP PAGE (Main Component)
+   - Fetches products from backend
+   - Sorts by sort_order
+   - Groups Single + Dozen pairs
+   - Manages cart state + drawer
+   --------------------------------------------------------- */
 export default function ShopPage() {
-  /* ---------------------------------------------
+  /* -----------------------------
      State
-     --------------------------------------------- */
+     ----------------------------- */
   const [products, setProducts] = useState<Product[]>([]);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
 
-  /* ---------------------------------------------
-     Fetch real products from backend
-     --------------------------------------------- */
+  /* -----------------------------
+     Fetch products from backend
+     ----------------------------- */
   useEffect(() => {
     async function loadProducts() {
-      const res = await fetch("http://localhost:5240/api/products", {
-        cache: "no-store",
-      });
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/products`);
       const data = await res.json();
       setProducts(data);
     }
     loadProducts();
   }, []);
 
-  /* ---------------------------------------------
-     CART LOGIC
-     --------------------------------------------- */
+  /* -----------------------------
+     Cart Logic
+     ----------------------------- */
 
+  // Add item to cart
   const handleAddToCart = (product: Product) => {
     setCart((prev) => {
       const existing = prev.find((item) => item.product.id === product.id);
+
       if (existing) {
         return prev.map((item) =>
           item.product.id === product.id
@@ -53,11 +61,14 @@ export default function ShopPage() {
             : item
         );
       }
+
       return [...prev, { product, quantity: 1 }];
     });
+
     setIsCartOpen(true);
   };
 
+  // Increase quantity
   const handleIncrement = (productId: number) => {
     setCart((prev) =>
       prev.map((item) =>
@@ -68,6 +79,7 @@ export default function ShopPage() {
     );
   };
 
+  // Update quantity manually
   const handleUpdateQuantity = (productId: number, newQty: number) => {
     setCart((prev) =>
       prev.map((item) =>
@@ -78,6 +90,7 @@ export default function ShopPage() {
     );
   };
 
+  // Decrease quantity
   const handleDecrement = (productId: number) => {
     setCart((prev) =>
       prev
@@ -90,25 +103,36 @@ export default function ShopPage() {
     );
   };
 
+  // Remove item entirely
   const handleRemove = (productId: number) => {
     setCart((prev) => prev.filter((item) => item.product.id !== productId));
   };
 
-  const sorted = products.sort((a, b) => a.sortOrder - b.sortOrder);
+  /* -----------------------------
+     Sort products by sort_order
+     ----------------------------- */
+  const sorted = [...products].sort((a, b) => a.sortOrder - b.sortOrder);
 
+  /* -----------------------------
+     Total cart items
+     ----------------------------- */
   const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
 
-  /* ---------------------------------------------
-     Group backend products into flavor pairs
-     --------------------------------------------- */
+  /* -----------------------------
+     Group products into:
+     {
+       flavorName: "Chocolate Chip Cookie",
+       singleProduct: {...},
+       dozenProduct: {...}
+     }
+     ----------------------------- */
   const groupedFlavors = (() => {
-    const map = new Map<
-      string,
-      { single?: Product; dozen?: Product }
-    >();
+    const map = new Map<string, { single?: Product; dozen?: Product }>();
 
-    products.forEach((p) => {
-      const baseName = p.name.replace(" - Single", "").replace(" - Dozen", "");
+    sorted.forEach((p) => {
+      const baseName = p.name
+        .replace(" - Single", "")
+        .replace(" - Dozen", "");
 
       if (!map.has(baseName)) {
         map.set(baseName, {});
@@ -128,18 +152,21 @@ export default function ShopPage() {
     }));
   })();
 
-  /* ---------------------------------------------
+  /* -----------------------------
      UI
-     --------------------------------------------- */
+     ----------------------------- */
   return (
     <div className="min-h-screen bg-violet-300">
+      {/* Top ticker */}
       <LogisticsTicker />
 
+      {/* Navbar */}
       <ShopNavbar
         cartCount={totalItems}
         onOpenCart={() => setIsCartOpen(true)}
       />
 
+      {/* Main content */}
       <main className="max-w-7xl mx-auto px-8 py-16 flex items-center justify-center min-h-[90vh]">
         <section
           className="
@@ -154,6 +181,7 @@ export default function ShopPage() {
             Menu
           </h2>
 
+          {/* Product grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
             {groupedFlavors.map(({ flavorName, singleProduct, dozenProduct }) => {
               if (!singleProduct || !dozenProduct) return null;
@@ -172,6 +200,7 @@ export default function ShopPage() {
         </section>
       </main>
 
+      {/* Cart Drawer */}
       <CartDrawer
         isOpen={isCartOpen}
         onClose={() => setIsCartOpen(false)}

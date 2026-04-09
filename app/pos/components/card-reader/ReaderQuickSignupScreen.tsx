@@ -10,7 +10,7 @@ import { useState } from "react";
    userService.create() stores a new user in local storage.
 ------------------------------------------------------- */
 import { userService } from "../../lib/userService";
-import type { User } from "../../types/user";
+import type { User } from "../../../types/user";
 
 /* -------------------------------------------------------
    🧱 ReaderQuickSignupScreen

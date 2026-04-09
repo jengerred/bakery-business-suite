@@ -4,7 +4,7 @@
    👤 User Type
    Represents a customer/user record in the POS.
 ------------------------------------------------------- */
-import type { User } from "../types/user";
+import type { User } from "../../types/user";
 
 /* -------------------------------------------------------
    🧱 userService

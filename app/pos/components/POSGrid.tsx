@@ -132,28 +132,28 @@ export default function POSGrid({
       <div className="relative z-10 flex flex-col gap-4">
        
       {/* NAV SECTION */}
-<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between px-6 py-2 gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between px-6 py-2 gap-4">
 
-  {/* LEFT SIDE: NAV BUTTONS + HAMBURGER */}
-  <div className="flex flex-col sm:flex-row sm:items-center gap-3 w-full sm:w-auto">
+      {/* LEFT SIDE: NAV BUTTONS + HAMBURGER */}
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3 w-full sm:w-auto">
 
-    {/* MOBILE HAMBURGER */}
-    <button
-      className="sm:hidden px-4 py-2 bg-violet-600 text-white rounded-xl font-black uppercase tracking-widest text-xs shadow-md active:scale-95"
-      onClick={() => setIsNavOpen(!isNavOpen)}
-    >
-      Menu
-    </button>
-
-    {/* DESKTOP NAV BUTTONS */}
-    <div className="hidden sm:flex gap-3 p-1.5 bg-white/20 backdrop-blur-md rounded-2xl border border-white/30 shadow-sm">
-      <button className="relative px-6 py-2.5 bg-violet-600 text-white rounded-xl font-black uppercase tracking-widest text-xs shadow-md transition-all active:scale-95 flex items-center gap-3">
-        <span className="relative flex h-2 w-2">
-          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-          <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.8)]"></span>
-        </span>
-        Register
+      {/* MOBILE HAMBURGER */}
+      <button
+        className="sm:hidden px-4 py-2 bg-violet-600 text-white rounded-xl font-black uppercase tracking-widest text-xs shadow-md active:scale-95"
+        onClick={() => setIsNavOpen(!isNavOpen)}
+      >
+        Menu
       </button>
+
+      {/* DESKTOP NAV BUTTONS */}
+      <div className="hidden sm:flex gap-3 p-1.5 bg-white/20 backdrop-blur-md rounded-2xl border border-white/30 shadow-sm">
+        <button className="relative px-6 py-2.5 bg-violet-600 text-white rounded-xl font-black uppercase tracking-widest text-xs shadow-md transition-all active:scale-95 flex items-center gap-3">
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.8)]"></span>
+          </span>
+          Register
+        </button>
 
       <Link
         href="/pos/transactions"

@@ -20,7 +20,7 @@ import { Elements } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
 import { useState } from "react";
 import CustomerLookupModal from "./components/customer/CustomerLookupModal"; 
-import { User } from "./types/user";
+import { User } from "../types/user";
 import { CartProvider } from "./context/CartContext";
 
 const stripePromise = loadStripe(

@@ -5,7 +5,7 @@
    Represents a customer record in the POS.
 ------------------------------------------------------- */
 import { createContext, useContext, useState, ReactNode } from "react";
-import type { User } from "../types/user";
+import type { User } from "../../types/user";
 
 /* -------------------------------------------------------
    🧠 CustomerContext Type

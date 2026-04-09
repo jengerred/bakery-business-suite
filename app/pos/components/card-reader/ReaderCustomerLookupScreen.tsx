@@ -11,7 +11,7 @@ import { useEffect } from "react";
    phone or email. If a match is found, we return a User.
 ------------------------------------------------------- */
 import { userService } from "../../lib/userService";
-import type { User } from "../../types/user";
+import type { User } from "../../../types/user";
 
 /* -------------------------------------------------------
    🧱 ReaderCustomerLookupScreen

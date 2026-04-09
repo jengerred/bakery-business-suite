@@ -21,7 +21,7 @@
 
 import { useState } from "react";
 import { userService } from "../../lib/userService";
-import type { User } from "../../types/user";
+import type { User } from "../../../types/user";
 
 /* -------------------------------------------------------
    🧱 Component
