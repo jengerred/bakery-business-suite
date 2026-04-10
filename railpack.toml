@@ -1,0 +1,2 @@
+[build]
+cmd = "rm -rf /root/.nuget/packages && dotnet publish --no-restore -c Release -o out"
