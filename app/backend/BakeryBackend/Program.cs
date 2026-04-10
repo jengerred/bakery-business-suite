@@ -3,88 +3,89 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ---------------------------------------------------------
-// PORT BINDING (Railway needs this)
-// ---------------------------------------------------------
-var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
-builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
-Console.WriteLine($"🌐 PORT ENV: {port}");
+/* ---------------------------------------------------------
+   SERVICE CONFIGURATION
+   ---------------------------------------------------------
+   This section registers all backend services used by the
+   bakery API, including:
 
-// ---------------------------------------------------------
-// SERVICES
-// ---------------------------------------------------------
+     - Controllers (API endpoints)
+     - JSON serialization settings
+     - Database connection (PostgreSQL via EF Core)
+     - CORS policy for frontend access
+     - OpenAPI/Swagger for development
+   --------------------------------------------------------- */
 
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+// Enable OpenAPI (Swagger UI in development)
+builder.Services.AddOpenApi();
 
+// Register controllers + JSON camelCase formatting
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
-        options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
+        // Ensures JSON fields use camelCase (imageUrl, sortOrder, etc.)
+        options.JsonSerializerOptions.PropertyNamingPolicy =
+            System.Text.Json.JsonNamingPolicy.CamelCase;
     });
 
+    // Register EF Core + PostgreSQL connection with dynamic JSON enabled
 builder.Services.AddDbContext<BakeryContext>(options =>
 {
-    Console.WriteLine("🗄️ Initializing DbContext with connection string:");
-    Console.WriteLine(builder.Configuration.GetConnectionString("DefaultConnection"));
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"));
+    var dataSourceBuilder = new Npgsql.NpgsqlDataSourceBuilder(
+        builder.Configuration.GetConnectionString("DefaultConnection")
+    );
+
+    // ⭐ REQUIRED for JSONB serialization of List<OrderItem>
+    dataSourceBuilder.EnableDynamicJson();
+
+    var dataSource = dataSourceBuilder.Build();
+
+    options.UseNpgsql(dataSource);
 });
 
+
+
+// ---------------------------------------------------------
+// CORS POLICY (Allows frontend apps to call this API)
+// ---------------------------------------------------------
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
     {
-        policy.AllowAnyOrigin()
-              .AllowAnyMethod()
-              .AllowAnyHeader();
+        policy
+            .AllowAnyOrigin()   // Allow any domain (Shop, POS, Vercel, localhost)
+            .AllowAnyMethod()   // GET, POST, PUT, DELETE
+            .AllowAnyHeader();  // Custom headers
     });
 });
 
 var app = builder.Build();
 
-Console.WriteLine("🚀 Application built successfully. Starting middleware pipeline...");
+/* ---------------------------------------------------------
+   MIDDLEWARE PIPELINE
+   ---------------------------------------------------------
+   Defines how HTTP requests flow through the backend:
 
-// ---------------------------------------------------------
-// GLOBAL EXCEPTION LOGGING
-// ---------------------------------------------------------
+     - OpenAPI (dev only)
+     - HTTPS redirection
+     - CORS
+     - Controller routing
+   --------------------------------------------------------- */
 
-app.Use(async (context, next) =>
-{
-    Console.WriteLine($"➡️ Incoming request: {context.Request.Method} {context.Request.Path}");
-
-    try
-    {
-        await next();
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine("🔥 UNHANDLED EXCEPTION:");
-        Console.WriteLine(ex.ToString());
-        throw;
-    }
-});
-
-// ---------------------------------------------------------
-// MIDDLEWARE PIPELINE
-// ---------------------------------------------------------
-
+// Enable Swagger UI only in development
 if (app.Environment.IsDevelopment())
 {
-    Console.WriteLine("🧪 Development mode: enabling Swagger");
-    app.UseSwagger();
-    app.UseSwaggerUI();
+    app.MapOpenApi();
 }
 
+// Redirect HTTP → HTTPS
 app.UseHttpsRedirection();
-Console.WriteLine("🔒 HTTPS redirection enabled");
 
+// Apply CORS before routing
 app.UseCors("AllowAll");
-Console.WriteLine("🌍 CORS policy applied");
 
+// Map controller endpoints (e.g., /api/products)
 app.MapControllers();
-Console.WriteLine("🧭 Controllers mapped");
 
-Console.WriteLine("🚀 About to run the application...");
+// Start the application
 app.Run();
-
-Console.WriteLine("❌ app.Run() exited unexpectedly.");

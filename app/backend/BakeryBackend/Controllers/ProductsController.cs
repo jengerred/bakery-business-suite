@@ -5,6 +5,22 @@ using BakeryBackend.Models;
 
 namespace BakeryBackend.Controllers
 {
+    /* ---------------------------------------------------------
+       PRODUCTS CONTROLLER (CRUD API)
+       ---------------------------------------------------------
+       This controller exposes full CRUD operations for products:
+
+         C - CREATE   (POST /api/products)
+         R - READ     (GET /api/products, GET /api/products/{id})
+         U - UPDATE   (PUT /api/products/{id})
+         D - DELETE   (DELETE /api/products/{id})
+
+       It is used by:
+         - Shop frontend (menu display)
+         - POS frontend (order entry)
+         - Admin tools (future feature)
+       --------------------------------------------------------- */
+
     [ApiController]
     [Route("api/[controller]")]
     public class ProductsController : ControllerBase
@@ -16,17 +32,24 @@ namespace BakeryBackend.Controllers
             _context = context;
         }
 
-        // GET: api/products
+        /* ---------------------------------------------------------
+           READ ALL PRODUCTS
+           GET: api/products
+           - Returns all products sorted by SortOrder
+           - Used by both Shop + POS
+           --------------------------------------------------------- */
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Product>>> GetProducts()
         {
             return await _context.Products
-    .OrderBy(p => p.SortOrder)   // ⭐ sort by your new column
-    .ToListAsync();
-
+                .OrderBy(p => p.SortOrder)
+                .ToListAsync();
         }
 
-        // GET: api/products/{id}
+        /* ---------------------------------------------------------
+           READ SINGLE PRODUCT
+           GET: api/products/{id}
+           --------------------------------------------------------- */
         [HttpGet("{id}")]
         public async Task<ActionResult<Product>> GetProduct(int id)
         {
@@ -38,7 +61,12 @@ namespace BakeryBackend.Controllers
             return product;
         }
 
-        // POST: api/products
+        /* ---------------------------------------------------------
+           CREATE PRODUCT
+           POST: api/products
+           - Accepts a ProductDto
+           - Creates a new Product entity
+           --------------------------------------------------------- */
         [HttpPost]
         public async Task<ActionResult<Product>> CreateProduct(ProductDto dto)
         {
@@ -55,7 +83,11 @@ namespace BakeryBackend.Controllers
             return CreatedAtAction(nameof(GetProduct), new { id = product.Id }, product);
         }
 
-        // PUT: api/products/{id}
+        /* ---------------------------------------------------------
+           UPDATE PRODUCT
+           PUT: api/products/{id}
+           - Updates name, price, description
+           --------------------------------------------------------- */
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateProduct(int id, ProductDto dto)
         {
@@ -73,7 +105,10 @@ namespace BakeryBackend.Controllers
             return NoContent();
         }
 
-        // DELETE: api/products/{id}
+        /* ---------------------------------------------------------
+           DELETE PRODUCT
+           DELETE: api/products/{id}
+           --------------------------------------------------------- */
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteProduct(int id)
         {
