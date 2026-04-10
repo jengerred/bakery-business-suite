@@ -1,10 +1,11 @@
 "use client";
 
 /* -------------------------------------------------------
-   📦 UI Components (Cashier-Side)
+📦 UI Components (Cashier-Side)
 ------------------------------------------------------- */
 import { useState, useEffect } from "react";
 import Link from "next/link";
+
 import ProductList from "./ProductList";
 import OrderSummary from "./OrderSummary";
 import OrderTotals from "./OrderTotals";
@@ -14,28 +15,37 @@ import CardReaderContainer from "./card-reader/CardReaderContainer";
 import LogoutModal from "./LogoutModal";
 
 /* -------------------------------------------------------
-   👤 Context & Types
+👤 Context & Types
 ------------------------------------------------------- */
 import { useCustomer } from "../context/CustomerContext";
 import type { CompletedOrder } from "../context/OrderHistoryContext";
+
 import { calculateTotals } from "../lib/calcTotals";
-import { Product } from "../lib/products";
+
+/* ⭐ Updated to use real backend Product type */
+import type { Product } from "@/app/types/product";
 
 type Props = {
   order: { product: Product; quantity: number; overridePrice?: number }[];
   setOrder: (order: any) => void;
+
   selectedProduct: Product | null;
   setSelectedProduct: (p: Product | null) => void;
+
   tempQty: number;
   openProductModal: (product: Product, quantity?: number, price?: number) => void;
   saveProductChanges: (product: Product, qty: number, price?: number) => void;
+
   handleRemove: (id: number) => void;
   handleIncrease: (id: number) => void;
   handleDecrease: (id: number) => void;
+
   showCheckout: boolean;
   setShowCheckout: (v: boolean) => void;
+
   lastOrder: CompletedOrder | null;
   setLastOrder: (o: CompletedOrder | null) => void;
+
   terminal: any;
   addOrder: (o: CompletedOrder) => void;
 };
@@ -58,10 +68,13 @@ export default function POSGrid({
   terminal,
   addOrder,
 }: Props) {
-
   const { customer, setCustomer } = useCustomer();
+
   const [showReceipt, setShowReceipt] = useState(false);
-  const [receiptMethod, setReceiptMethod] = useState<"print" | "email" | "text" | "none" | null | undefined>(undefined);
+  const [receiptMethod, setReceiptMethod] = useState<
+    "print" | "email" | "text" | "none" | null | undefined
+  >(undefined);
+
   const [isLogoutOpen, setIsLogoutOpen] = useState(false);
   const [isReaderActive, setIsReaderActive] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
@@ -70,7 +83,6 @@ export default function POSGrid({
   const isOrderEmpty = order.length === 0;
 
   const [isNavOpen, setIsNavOpen] = useState(false);
-
 
   const handleUpdateQty = (productId: number, newQty: number) => {
     setOrder((prev: any[]) =>
@@ -94,6 +106,7 @@ export default function POSGrid({
         setIsReaderActive(false);
       }
     }
+
     window.addEventListener("reader-status-update", handleReaderStatus);
     return () => window.removeEventListener("reader-status-update", handleReaderStatus);
   }, []);
@@ -104,6 +117,7 @@ export default function POSGrid({
       setReceiptMethod(e.detail.method);
       setShowReceipt(true);
     }
+
     window.addEventListener("reader-receipt-choice", handleReceiptChoice);
     return () => window.removeEventListener("reader-receipt-choice", handleReceiptChoice);
   }, [lastOrder]);
@@ -111,12 +125,12 @@ export default function POSGrid({
   function handleCloseReceipt() {
     setShowReceipt(false);
     setCustomer(null);
-    setReceiptMethod(undefined); 
-    setIsReaderActive(false); 
+    setReceiptMethod(undefined);
+    setIsReaderActive(false);
     window.dispatchEvent(new CustomEvent("cashier-receipt-done"));
   }
 
-  return (
+ return (
     <div 
       className="relative min-h-screen flex flex-col gap-4 px-8 py-2 overflow-hidden" 
       style={{
@@ -362,3 +376,4 @@ export default function POSGrid({
     </div>
   );
 }
+

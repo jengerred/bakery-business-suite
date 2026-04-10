@@ -4,7 +4,7 @@
    🧺 Types
    Product type is used to type each cart item.
 ------------------------------------------------------- */
-import type { Product } from "@/app/pos/lib/products";
+import type { Product } from "@/app/types/product";   // Backend Product type
 
 /* -------------------------------------------------------
    🧱 Local Types

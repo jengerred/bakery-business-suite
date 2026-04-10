@@ -5,7 +5,7 @@
    Used to type items stored in the cart.
 ------------------------------------------------------- */
 import { createContext, useContext, useState } from "react";
-import type { Product } from "../lib/products";
+import type { Product } from "@/app/types/product";   // Backend Product type
 
 /* -------------------------------------------------------
    🛒 CartItem Type

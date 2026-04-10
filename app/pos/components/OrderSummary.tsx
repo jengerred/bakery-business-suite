@@ -3,7 +3,7 @@
 /* -------------------------------------------------------
    📦 Product Type
 ------------------------------------------------------- */
-import { Product } from "@/app/pos/lib/products";
+import { Product } from "@/app/types/product";   // Backend Product type
 
 /* -------------------------------------------------------
    👤 Customer Context

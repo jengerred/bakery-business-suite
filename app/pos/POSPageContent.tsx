@@ -31,9 +31,7 @@ import { createCompletedOrder } from "./lib/handleCheckout";
 
 /* -------------------------------------------------------
    🖥️ POS Page Content
-   🎨 UPDATED: 
-   - Fixed background to support Glassmorphism.
-   - Removed unused/broken context imports causing build errors.
+   Uses real backend Product type (app/types/product.ts)
 ------------------------------------------------------- */
 export default function POSPageContent() {
   /* ------------------------------
@@ -54,6 +52,7 @@ export default function POSPageContent() {
 
   /* ------------------------------
      🛒 Cart Logic (Products, Qty, Modal)
+     NOTE: useCart() already uses the shared Product type
   ------------------------------ */
   const {
     order,
@@ -74,17 +73,9 @@ export default function POSPageContent() {
   useStripeRedirectToast();
 
   return (
-    /* 🎯 THEME ANCHOR: 
-       - min-h-screen: Ensures the background covers the whole browser.
-       - bg-slate-50: The clean "daytime" bakery look.
-       - dark:bg-slate-950: The deep "closing shift" navy.
-       - transition-colors: Makes the toggle feel expensive/smooth.
-    */
-    <div className="min-h-screen bg-violet-50 dark:bg-slate-950 transition-colors duration-500">  
-      
-      {/* 🧱 Main POS Grid Layout 
-          We removed p-4 here so the Navbar in POSGrid can sit flush at the top.
-      */}
+    <div className="min-h-screen bg-violet-50 dark:bg-slate-950 transition-colors duration-500">
+
+      {/* 🧱 Main POS Grid Layout */}
       <POSGrid
         order={order}
         setOrder={setOrder}

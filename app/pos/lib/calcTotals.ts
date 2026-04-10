@@ -1,7 +1,7 @@
 /* -------------------------------------------------------
    🧺 Product Type
 ------------------------------------------------------- */
-import { Product } from "./products";
+import { Product } from "@/app/types/product";   // Backend Product type
 
 /* -------------------------------------------------------
    🧮 calculateTotals

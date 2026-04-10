@@ -8,7 +8,7 @@ import { createContext, useContext, useEffect, useState } from "react";
 /* -------------------------------------------------------
    🧺 Product Type
 ------------------------------------------------------- */
-import { Product } from "@/app/pos/lib/products";
+import { Product } from "@/app/types/product";
 
 /* -------------------------------------------------------
    🧾 Order Types

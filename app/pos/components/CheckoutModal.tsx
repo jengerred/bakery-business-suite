@@ -10,7 +10,7 @@ import { toast } from "react-hot-toast";
 /* -------------------------------------------------------
    🧱 UI Components & Types
 ------------------------------------------------------- */
-import { Product } from "../lib/products";
+import { Product } from "@/app/types/product";   // Backend Product type
 import { useTerminalSimulation } from "../hooks/useTerminalSimulation";
 
 type CheckoutModalProps = {

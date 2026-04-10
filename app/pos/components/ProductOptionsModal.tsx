@@ -4,7 +4,7 @@
    Imports
    --------------------------------------------------------- */
 import { useState, useEffect } from "react";
-import { Product } from "../lib/products";
+import { Product } from "@/app/types/product";   // Backend Product type
 
 /* ---------------------------------------------------------
    Props

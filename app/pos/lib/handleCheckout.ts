@@ -14,7 +14,7 @@ import { calculateTotals } from "./calcTotals";
    🧺 Product Type
    Used to type each item in the order.
 ------------------------------------------------------- */
-import { Product } from "./products";
+import { Product } from "@/app/types/product";   // Backend Product type
 
 /* -------------------------------------------------------
    🧱 createCompletedOrder
