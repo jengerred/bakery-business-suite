@@ -11,7 +11,7 @@ export function useManagerDashboard() {
   useEffect(() => {
     async function load() {
       try {
-        const res = await fetch(`${API_URL}/orders`);
+        const res = await fetch(`${API_URL}/api/orders`);
         const data = await res.json();
         setOrders(data);
       } catch (err) {

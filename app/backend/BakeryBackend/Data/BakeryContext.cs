@@ -85,6 +85,17 @@ namespace BakeryBackend.Data
 
                 entity.Property(o => o.CustomerId).HasColumnName("customer_id");
                 entity.Property(o => o.CustomerName).HasColumnName("customer_name");
+
+                entity.Property(o => o.PickupTime).HasColumnName("pickup_time");
+                entity.Property(o => o.Notes).HasColumnName("notes");
+                entity.Property(o => o.CustomerEmail).HasColumnName("customer_email");
+                entity.Property(o => o.CustomerPhone).HasColumnName("customer_phone");
+                entity.Property(o => o.FulfillmentType).HasColumnName("fulfillment_type");
+                entity.Property(o => o.Address).HasColumnName("address");
+                entity.Property(o => o.City).HasColumnName("city");
+                entity.Property(o => o.State).HasColumnName("state");
+                entity.Property(o => o.Zip).HasColumnName("zip");
+                entity.Property(o => o.Status).HasColumnName("status");
             });
         }
     }

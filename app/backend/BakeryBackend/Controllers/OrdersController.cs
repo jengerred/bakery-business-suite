@@ -7,7 +7,7 @@ using BakeryBackend.Dtos;
 namespace BakeryBackend.Controllers
 {
     [ApiController]
-    [Route("orders")]
+    [Route("api/[controller]")]
     public class OrdersController : ControllerBase
     {
         private readonly BakeryContext _db;
@@ -51,7 +51,19 @@ namespace BakeryBackend.Controllers
                 Timestamp = dto.Timestamp,
 
                 CustomerId = dto.CustomerId,
-                CustomerName = dto.CustomerName
+                CustomerName = dto.CustomerName,
+
+                PickupTime = dto.PickupTime,
+        
+                Notes = dto.Notes,
+                CustomerEmail = dto.CustomerEmail,
+                CustomerPhone = dto.CustomerPhone,
+                FulfillmentType = dto.FulfillmentType,
+                Address = dto.Address,
+                City = dto.City,
+                State = dto.State,
+                Zip = dto.Zip,
+                Status = dto.Status ?? "paid"
             };
 
             _db.Orders.Add(order);
@@ -60,18 +72,18 @@ namespace BakeryBackend.Controllers
             return Ok(order);
         }
         // ----------------------------------------------------
-// GET /orders
-// Returns all orders sorted by newest first
-// ----------------------------------------------------
-[HttpGet]
-public async Task<IActionResult> GetAllOrders()
-{
-    var orders = await _db.Orders
-        .OrderByDescending(o => o.Timestamp)
-        .ToListAsync();
+        // GET /orders
+        // Returns all orders sorted by newest first
+        // ----------------------------------------------------
+        [HttpGet]
+        public async Task<IActionResult> GetAllOrders()
+        {
+            var orders = await _db.Orders
+                .OrderByDescending(o => o.Timestamp)
+                .ToListAsync();
 
-    return Ok(orders);
-}
+            return Ok(orders);
+        }
 
     }
 }

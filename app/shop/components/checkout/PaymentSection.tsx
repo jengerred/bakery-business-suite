@@ -14,7 +14,7 @@ interface PaymentSectionProps {
   onDecrement: (id: number) => void;
   onUpdateQuantity: (id: number, newQty: number) => void;
   onRemove: (id: number) => void;
-  onPaymentSuccess: () => void; // New prop to trigger internal success view
+  onPaymentSuccess: (stripeId?: string) => void; // Modified to pass the Stripe ID
 }
 
 export default function PaymentSection({ 
@@ -39,7 +39,7 @@ export default function PaymentSection({
 
     setLoading(true);
 
-    // 1. Validate the form fields first
+    // 1. Validate the form fields first (Stripe Internal Validation)
     const { error: submitError } = await elements.submit();
     if (submitError) {
       alert(submitError.message);
@@ -48,7 +48,7 @@ export default function PaymentSection({
     }
 
     try {
-      // 2. Fetch the clientSecret from your API
+      // 2. Fetch the clientSecret from your Next.js API
       const res = await fetch("/api/create-payment-intent", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -65,7 +65,7 @@ export default function PaymentSection({
       const { error, paymentIntent } = await stripe.confirmPayment({
         elements,
         clientSecret: data.clientSecret,
-        redirect: "if_required", // This prevents redirecting for standard cards
+        redirect: "if_required", 
         confirmParams: { 
           return_url: `${window.location.origin}/shop`,
         },
@@ -75,8 +75,8 @@ export default function PaymentSection({
         alert(error.message);
       } else if (paymentIntent && paymentIntent.status === "succeeded") {
         // --- SUCCESS ---
-        // Instead of a new page, we trigger the internal success state
-        onPaymentSuccess();
+        // Pass the paymentIntent.id so the parent can send it to the C# backend
+        onPaymentSuccess(paymentIntent.id);
       }
     } catch (err: any) {
       alert(err.message || "An unexpected error occurred.");
