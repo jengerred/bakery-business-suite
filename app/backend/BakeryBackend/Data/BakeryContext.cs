@@ -1,73 +1,56 @@
 using Microsoft.EntityFrameworkCore;
 using BakeryBackend.Models;
+using System.Text.Json;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace BakeryBackend.Data
 {
     /* ---------------------------------------------------------
        BAKERY CONTEXT (Entity Framework Core)
        ---------------------------------------------------------
-       This class represents the database session for the
-       bakery backend. It defines:
-
-         - Which tables exist (DbSet<T>)
-         - How EF Core maps models to the database
-         - Any custom configuration (via OnModelCreating)
-
-       The BakeryContext is injected into controllers and
-       services so they can perform CRUD operations on the DB.
-
-       NOTE:
-       - Add new DbSet<T> properties here as your system grows
-         (Orders, Employees, Customers, Inventory, etc.)
-       --------------------------------------------------------- */
+       Updated to handle JSONB serialization for Order Items and
+       ensure compatibility with Supabase/PostgreSQL naming.
+    --------------------------------------------------------- */
 
     public class BakeryContext : DbContext
     {
         public BakeryContext(DbContextOptions<BakeryContext> options)
             : base(options) {}
 
-        /* -----------------------------------------------------
-           DATABASE TABLES
-           ----------------------------------------------------- */
-
-        // Existing table
         public DbSet<Product> Products { get; set; }
-
-        // NEW: Orders table
         public DbSet<Order> Orders { get; set; }
 
-        /* -----------------------------------------------------
-           MODEL CONFIGURATION
-           -----------------------------------------------------
-           This is where we map C# models to PostgreSQL tables.
-           We also configure JSONB, column names, relationships,
-           and any custom EF Core behavior.
-           ----------------------------------------------------- */
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
 
+            // Setup JSON serialization options
+            var jsonOptions = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+
+            // Value Converter: Transforms List<OrderItem> <-> JSON String
+            var itemsConverter = new ValueConverter<List<OrderItem>, string>(
+                v => JsonSerializer.Serialize(v, jsonOptions),
+                v => JsonSerializer.Deserialize<List<OrderItem>>(v, jsonOptions) ?? new List<OrderItem>()
+            );
+
             /* -------------------------------------------------
                ORDER ENTITY MAPPING
-               -------------------------------------------------
-               Maps the Order model to the "orders" table in
-               Supabase/PostgreSQL.
-
-               Includes:
-               - JSONB mapping for Items
-               - Column name mappings
-               - Nullable vs non-nullable fields
-            ------------------------------------------------- */
+               ------------------------------------------------- */
             modelBuilder.Entity<Order>(entity =>
             {
-                entity.ToTable("Orders");
+                // PostgreSQL/Supabase tables are typically lowercase
+                entity.ToTable("orders");
+
+                entity.HasKey(o => o.Id);
 
                 entity.Property(o => o.Id)
                     .HasColumnName("id");
 
+                // Map the List to the JSONB column using the converter
                 entity.Property(o => o.Items)
                     .HasColumnName("items")
-                    .HasColumnType("jsonb"); // JSONB column in Supabase
+                    .HasColumnType("jsonb")
+                    .HasConversion(itemsConverter); 
 
                 entity.Property(o => o.Subtotal).HasColumnName("subtotal");
                 entity.Property(o => o.Tax).HasColumnName("tax");
@@ -96,6 +79,20 @@ namespace BakeryBackend.Data
                 entity.Property(o => o.State).HasColumnName("state");
                 entity.Property(o => o.Zip).HasColumnName("zip");
                 entity.Property(o => o.Status).HasColumnName("status");
+            });
+
+            /* -------------------------------------------------
+               PRODUCT ENTITY MAPPING
+               ------------------------------------------------- */
+            modelBuilder.Entity<Product>(entity =>
+            {
+                entity.ToTable("products");
+                entity.Property(p => p.Id).HasColumnName("id");
+                entity.Property(p => p.Name).HasColumnName("name");
+                entity.Property(p => p.Price).HasColumnName("price");
+                entity.Property(p => p.Description).HasColumnName("description");
+                entity.Property(p => p.ImageUrl).HasColumnName("image_url");
+                entity.Property(p => p.SortOrder).HasColumnName("sort_order");
             });
         }
     }
