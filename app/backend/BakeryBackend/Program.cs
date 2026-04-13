@@ -5,19 +5,11 @@ var builder = WebApplication.CreateBuilder(args);
 
 /* ---------------------------------------------------------
    SERVICE CONFIGURATION
-   ---------------------------------------------------------
-   This section registers all backend services used by the
-   bakery API, including:
-
-     - Controllers (API endpoints)
-     - JSON serialization settings
-     - Database connection (PostgreSQL via EF Core)
-     - CORS policy for frontend access
-     - OpenAPI/Swagger for development
    --------------------------------------------------------- */
 
-// Enable OpenAPI (Swagger UI in development)
-builder.Services.AddOpenApi();
+// ✅ FIXED: Replaced .NET 9 AddOpenApi() with .NET 8 Swagger
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
 
 // Register controllers + JSON camelCase formatting
 builder.Services.AddControllers()
@@ -28,7 +20,7 @@ builder.Services.AddControllers()
             System.Text.Json.JsonNamingPolicy.CamelCase;
     });
 
-    // Register EF Core + PostgreSQL connection with dynamic JSON enabled
+// Register EF Core + PostgreSQL connection with dynamic JSON enabled
 builder.Services.AddDbContext<BakeryContext>(options =>
 {
     var dataSourceBuilder = new Npgsql.NpgsqlDataSourceBuilder(
@@ -43,8 +35,6 @@ builder.Services.AddDbContext<BakeryContext>(options =>
     options.UseNpgsql(dataSource);
 });
 
-
-
 // ---------------------------------------------------------
 // CORS POLICY (Allows frontend apps to call this API)
 // ---------------------------------------------------------
@@ -53,7 +43,7 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowAll", policy =>
     {
         policy
-            .AllowAnyOrigin()   // Allow any domain (Shop, POS, Vercel, localhost)
+            .AllowAnyOrigin()   // Allow any domain
             .AllowAnyMethod()   // GET, POST, PUT, DELETE
             .AllowAnyHeader();  // Custom headers
     });
@@ -63,22 +53,16 @@ var app = builder.Build();
 
 /* ---------------------------------------------------------
    MIDDLEWARE PIPELINE
-   ---------------------------------------------------------
-   Defines how HTTP requests flow through the backend:
-
-     - OpenAPI (dev only)
-     - HTTPS redirection
-     - CORS
-     - Controller routing
    --------------------------------------------------------- */
 
-// Enable Swagger UI only in development
+// ✅ FIXED: Replaced .NET 9 MapOpenApi() with .NET 8 Swagger UI
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
+    app.UseSwagger();
+    app.UseSwaggerUI();
 }
 
-// Redirect HTTP → HTTPS
+// Redirect HTTP → HTTPS (Note: If Railway 500s, try commenting this out)
 app.UseHttpsRedirection();
 
 // Apply CORS before routing

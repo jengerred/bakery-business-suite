@@ -18,63 +18,66 @@ namespace BakeryBackend.Controllers
         }
 
         // ----------------------------------------------------
-        // POST /orders
-        // Creates a new order in the database
+        // POST /api/orders
         // ----------------------------------------------------
         
         [HttpPost]
-        public async Task<IActionResult> CreateOrder([FromBody] OrderDto order) // This will now accept the flat fields
+        public async Task<IActionResult> CreateOrder([FromBody] OrderDto order)
         {
-            if (dto == null)
+            // ✅ Check 'order' instead of 'dto'
+            if (order == null)
                 return BadRequest("Order payload is missing.");
 
-            var order = new Order
+            // ✅ Renamed to 'newOrder' to avoid conflict with 'order' parameter
+            var newOrder = new Order
             {
                 Id = Guid.NewGuid(),
-                Items = dto.Items.Select(i => new OrderItem
+                // ✅ Mapping from 'order' fields
+                Items = order.Items.Select(i => new OrderItem
                 {
                     Product = i.Product,
                     Quantity = i.Quantity
                 }).ToList(),
 
-                Subtotal = dto.Subtotal,
-                Tax = dto.Tax,
-                Total = dto.Total,
+                Subtotal = order.Subtotal,
+                Tax = order.Tax,
+                Total = order.Total,
 
-                PaymentType = dto.PaymentType,
-                CardEntryMethod = dto.CardEntryMethod,
+                PaymentType = order.PaymentType,
+                CardEntryMethod = order.CardEntryMethod,
 
-                CashTendered = dto.CashTendered,
-                ChangeGiven = dto.ChangeGiven,
+                CashTendered = order.CashTendered,
+                ChangeGiven = order.ChangeGiven,
 
-                StripePaymentId = dto.StripePaymentId,
+                StripePaymentId = order.StripePaymentId,
 
-                Timestamp = dto.Timestamp,
+                // Make sure your DTO provides a DateTime for Timestamp
+                Timestamp = order.Timestamp != default ? order.Timestamp : DateTime.UtcNow,
 
-                CustomerId = dto.CustomerId,
-                CustomerName = dto.CustomerName,
+                CustomerId = order.CustomerId,
+                CustomerName = order.CustomerName,
+                CustomerEmail = order.CustomerEmail,
+                CustomerPhone = order.CustomerPhone,
 
-                PickupTime = dto.PickupTime,
+                PickupTime = order.PickupTime,
         
-                Notes = dto.Notes,
-                CustomerEmail = dto.CustomerEmail,
-                CustomerPhone = dto.CustomerPhone,
-                FulfillmentType = dto.FulfillmentType,
-                Address = dto.Address,
-                City = dto.City,
-                State = dto.State,
-                Zip = dto.Zip,
-                Status = dto.Status ?? "paid"
+                Notes = order.Notes,
+                FulfillmentType = order.FulfillmentType,
+                Address = order.Address,
+                City = order.City,
+                State = order.State,
+                Zip = order.Zip,
+                Status = order.Status ?? "paid"
             };
 
-            _db.Orders.Add(order);
+            _db.Orders.Add(newOrder);
             await _db.SaveChangesAsync();
 
-            return Ok(order);
+            return Ok(newOrder);
         }
+
         // ----------------------------------------------------
-        // GET /orders
-        // Returns all orders sorted by newest first
+        // GET /api/orders
         // ----------------------------------------------------
         [HttpGet]
         public async Task<IActionResult> GetAllOrders()
@@ -85,6 +88,5 @@ namespace BakeryBackend.Controllers
 
             return Ok(orders);
         }
-
     }
 }
