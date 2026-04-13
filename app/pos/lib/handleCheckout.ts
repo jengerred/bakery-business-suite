@@ -62,10 +62,17 @@ export function createCompletedOrder(
     changeGiven: paymentData.changeGiven,    // For cash payments
 
     stripePaymentId: paymentData.stripePaymentId, // For card payments
-    timestamp: Date.now(),                   // When the order was completed
+    timestamp: new Date().toISOString(),      // When the order was completed
 
     // Overwritten in POSGrid using CustomerContext
     customerId: null,
     customerName: null,
+    status: "paid",              // Required property
+    fulfillmentType: "POS",      // Required property
+    address: "",                 // Required property
+    city: "",                    // Required property
+    state: "",                   // Required property
+    zip: "",                     // Required property
+    notes: "",                   // Required property
   };
 }

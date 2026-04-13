@@ -48,27 +48,32 @@ export default function OrderHistory() {
          Displays each completed order with items + totals.
       ------------------------------------------------------- */}
       <ul className="space-y-4">
-        {orderHistory.map((order) => (
-          <li key={order.id} className="border p-3 rounded">
+        {orderHistory.map((order, index) => (
+          <li key={order.id ?? `order-${index}`} className="border p-3 rounded">
 
             {/* Order ID + timestamp */}
-            <p className="font-medium">Order #{order.id.slice(0, 8)}</p>
+            <p className="font-medium">
+              Order #{order.id?.slice(0, 8).toUpperCase() ?? "PENDING"}
+            </p>
+            
             <p className="text-sm text-gray-500">
-              {new Date(order.timestamp).toLocaleString()}
+              {order.timestamp 
+                ? new Date(order.timestamp).toLocaleString() 
+                : "Just now"}
             </p>
 
             {/* Line items */}
-            <ul className="mt-2 text-sm">
-              {order.items.map((item) => (
-                <li key={item.product.id}>
-                  {item.quantity}× {item.product.name}
+            <ul className="mt-2 text-sm border-b border-gray-100 pb-2">
+              {order.items.map((item, itemIdx) => (
+                <li key={item.product?.id ?? itemIdx}>
+                  {item.quantity}× {item.product?.name ?? "Unknown Product"}
                 </li>
               ))}
             </ul>
 
-            {/* Total */}
+            {/* Total - Moved inside the correct loop context */}
             <p className="font-semibold mt-2">
-              Total: ${order.total.toFixed(2)}
+              Total: ${order.total?.toFixed(2) ?? "0.00"}
             </p>
           </li>
         ))}
@@ -76,12 +81,11 @@ export default function OrderHistory() {
 
       {/* -------------------------------------------------------
          🗑️ CLEAR HISTORY BUTTON
-         Only shown when at least one order exists.
       ------------------------------------------------------- */}
       {orderHistory.length > 0 && (
         <button
           onClick={clearHistory}
-          className="mt-4 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+          className="mt-4 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors active:scale-95"
         >
           Clear History
         </button>
