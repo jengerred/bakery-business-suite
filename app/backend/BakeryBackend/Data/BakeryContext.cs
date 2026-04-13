@@ -2,16 +2,10 @@ using Microsoft.EntityFrameworkCore;
 using BakeryBackend.Models;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 
 namespace BakeryBackend.Data
 {
-    /* ---------------------------------------------------------
-       BAKERY CONTEXT (Entity Framework Core)
-       ---------------------------------------------------------
-       Updated to handle JSONB serialization for Order Items and
-       ensure compatibility with Supabase/PostgreSQL naming.
-    --------------------------------------------------------- */
-
     public class BakeryContext : DbContext
     {
         public BakeryContext(DbContextOptions<BakeryContext> options)
@@ -24,51 +18,48 @@ namespace BakeryBackend.Data
         {
             base.OnModelCreating(modelBuilder);
 
-            // Setup JSON serialization options
             var jsonOptions = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
 
-            // Value Converter: Transforms List<OrderItem> <-> JSON String
+            // 1. Converter: List<OrderItem> <-> JSON String
             var itemsConverter = new ValueConverter<List<OrderItem>, string>(
                 v => JsonSerializer.Serialize(v, jsonOptions),
                 v => JsonSerializer.Deserialize<List<OrderItem>>(v, jsonOptions) ?? new List<OrderItem>()
             );
 
+            // 2. Comparer: Needed so EF knows if the list inside the JSON changed
+            var itemsComparer = new ValueComparer<List<OrderItem>>(
+                (c1, c2) => JsonSerializer.Serialize(c1, jsonOptions) == JsonSerializer.Serialize(c2, jsonOptions),
+                c => c == null ? 0 : JsonSerializer.Serialize(c, jsonOptions).GetHashCode(),
+                c => JsonSerializer.Deserialize<List<OrderItem>>(JsonSerializer.Serialize(c, jsonOptions), jsonOptions) ?? new List<OrderItem>()
+            );
+
             /* -------------------------------------------------
-               ORDER ENTITY MAPPING
+               ORDER ENTITY MAPPING (Matches Capitalized "Orders")
                ------------------------------------------------- */
             modelBuilder.Entity<Order>(entity =>
             {
-                // PostgreSQL/Supabase tables are typically lowercase
-                entity.ToTable("orders");
+                entity.ToTable("Orders"); // FIXED: Matches your Supabase casing
 
                 entity.HasKey(o => o.Id);
+                entity.Property(o => o.Id).HasColumnName("id");
 
-                entity.Property(o => o.Id)
-                    .HasColumnName("id");
-
-                // Map the List to the JSONB column using the converter
                 entity.Property(o => o.Items)
                     .HasColumnName("items")
                     .HasColumnType("jsonb")
-                    .HasConversion(itemsConverter); 
+                    .HasConversion(itemsConverter)
+                    .Metadata.SetValueComparer(itemsComparer); // FIXED: Clears the warning
 
                 entity.Property(o => o.Subtotal).HasColumnName("subtotal");
                 entity.Property(o => o.Tax).HasColumnName("tax");
                 entity.Property(o => o.Total).HasColumnName("total");
-
                 entity.Property(o => o.PaymentType).HasColumnName("payment_type");
                 entity.Property(o => o.CardEntryMethod).HasColumnName("card_entry_method");
-
                 entity.Property(o => o.CashTendered).HasColumnName("cash_tendered");
                 entity.Property(o => o.ChangeGiven).HasColumnName("change_given");
-
                 entity.Property(o => o.StripePaymentId).HasColumnName("stripe_payment_id");
-
                 entity.Property(o => o.Timestamp).HasColumnName("timestamp");
-
                 entity.Property(o => o.CustomerId).HasColumnName("customer_id");
                 entity.Property(o => o.CustomerName).HasColumnName("customer_name");
-
                 entity.Property(o => o.PickupTime).HasColumnName("pickup_time");
                 entity.Property(o => o.Notes).HasColumnName("notes");
                 entity.Property(o => o.CustomerEmail).HasColumnName("customer_email");
@@ -82,11 +73,11 @@ namespace BakeryBackend.Data
             });
 
             /* -------------------------------------------------
-               PRODUCT ENTITY MAPPING
+               PRODUCT ENTITY MAPPING (Matches Capitalized "Products")
                ------------------------------------------------- */
             modelBuilder.Entity<Product>(entity =>
             {
-                entity.ToTable("products");
+                entity.ToTable("Products"); // FIXED: Matches your Supabase casing
                 entity.Property(p => p.Id).HasColumnName("id");
                 entity.Property(p => p.Name).HasColumnName("name");
                 entity.Property(p => p.Price).HasColumnName("price");

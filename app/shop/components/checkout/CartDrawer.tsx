@@ -238,18 +238,19 @@ const handleSubmitOrder = async (paymentType: "card" | "cash", stripeId?: string
                 currency: 'usd',
                 appearance: { theme: 'stripe' }
             }}>
-              <PaymentSection 
-                finalTotal={finalTotal} 
-                onBack={() => setView("details")} 
-                cart={cart} 
-                method={method} 
-                onSwitchToToggle={handleToggleMethod} 
-                onPaymentSuccess={(stripeId) => handleSubmitOrder("card", stripeId)} 
-                onIncrement={onIncrement}
-                onDecrement={onDecrement}
-                onUpdateQuantity={onUpdateQuantity}
-                onRemove={onRemove}
-              />
+             <PaymentSection 
+              finalTotal={finalTotal} 
+              onBack={() => setView("details")} 
+              cart={cart} 
+              method={method} 
+              onSwitchToToggle={handleToggleMethod} // Now it exists!
+              onPaymentSuccess={(stripeId) => handleSubmitOrder("card", stripeId)} // Now it expects 2 args!
+              onIncrement={onIncrement}
+              onDecrement={onDecrement}
+              onUpdateQuantity={onUpdateQuantity}
+              onRemove={onRemove}
+            />
+            
             </Elements>
           )}
 
