@@ -73,7 +73,7 @@ export function OrderHistoryProvider({ children }: { children: React.ReactNode }
       try {
         setLoading(true);
 
-        const res = await fetch(`${API}/orders`);
+        const res = await fetch(`${API}/api/orders`);
         if (!res.ok) throw new Error("Failed to load order history");
 
         const data = await res.json();
