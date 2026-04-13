@@ -93,7 +93,7 @@ export function OrderHistoryProvider({ children }: { children: React.ReactNode }
   ------------------------------------------------------- */
   const addOrder = async (order: CompletedOrder) => {
     try {
-      const res = await fetch(`${API}/orders`, {
+      const res = await fetch(`${API}/api/orders`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(order),
@@ -115,7 +115,7 @@ export function OrderHistoryProvider({ children }: { children: React.ReactNode }
   ------------------------------------------------------- */
   const clearHistory = async () => {
     try {
-      const res = await fetch(`${API}/orders`, {
+      const res = await fetch(`${API}/api/orders`, {
         method: "DELETE",
       });
 
