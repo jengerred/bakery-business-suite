@@ -38,7 +38,7 @@ namespace BakeryBackend.Data
                ------------------------------------------------- */
             modelBuilder.Entity<Order>(entity =>
             {
-                entity.ToTable("Orders"); // FIXED: Matches your Supabase casing
+                entity.ToTable("Orders"); // Matches Supabase casing
 
                 entity.HasKey(o => o.Id);
                 entity.Property(o => o.Id).HasColumnName("id");
@@ -47,7 +47,7 @@ namespace BakeryBackend.Data
                     .HasColumnName("items")
                     .HasColumnType("jsonb")
                     .HasConversion(itemsConverter)
-                    .Metadata.SetValueComparer(itemsComparer); // FIXED: Clears the warning
+                    .Metadata.SetValueComparer(itemsComparer); 
 
                 entity.Property(o => o.Subtotal).HasColumnName("subtotal");
                 entity.Property(o => o.Tax).HasColumnName("tax");
@@ -57,7 +57,7 @@ namespace BakeryBackend.Data
                 entity.Property(o => o.CashTendered).HasColumnName("cash_tendered");
                 entity.Property(o => o.ChangeGiven).HasColumnName("change_given");
                 entity.Property(o => o.StripePaymentId).HasColumnName("stripe_payment_id");
-                entity.Property(o => o.Timestamp).HasColumnName("timestamp");
+                entity.Property(o => o.Timestamp).HasColumnName("created_at");
                 entity.Property(o => o.CustomerId).HasColumnName("customer_id");
                 entity.Property(o => o.CustomerName).HasColumnName("customer_name");
                 entity.Property(o => o.PickupTime).HasColumnName("pickup_time");
@@ -77,8 +77,8 @@ namespace BakeryBackend.Data
                ------------------------------------------------- */
             modelBuilder.Entity<Product>(entity =>
             {
-                entity.ToTable("Products"); // FIXED: Matches your Supabase casing
-                entity.Property(p => p.Id).HasColumnName("id");
+                entity.ToTable("Products"); // Matches Supabase casing
+                entity.Property(p => p.Id).HasColumnName("Id");
                 entity.Property(p => p.Name).HasColumnName("name");
                 entity.Property(p => p.Price).HasColumnName("price");
                 entity.Property(p => p.Description).HasColumnName("description");

@@ -21,12 +21,11 @@ namespace BakeryBackend.Models
 
         public string? StripePaymentId { get; set; }
 
-        public long Timestamp { get; set; }
-
+        public DateTime Timestamp { get; set; } = DateTime.UtcNow;
         public string? CustomerId { get; set; }
         public string? CustomerName { get; set; }
 
-            public DateTime? PickupTime { get; set; }
+        public DateTime? PickupTime { get; set; }
         public string? Notes { get; set; }
         public string? CustomerEmail { get; set; }
         public string? CustomerPhone { get; set; }

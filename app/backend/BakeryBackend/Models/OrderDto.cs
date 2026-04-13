@@ -20,7 +20,7 @@ namespace BakeryBackend.Dtos
 
         public string? StripePaymentId { get; set; }
 
-        public long Timestamp { get; set; }
+        public DateTime Timestamp { get; set; } = DateTime.UtcNow;
 
         public string? CustomerId { get; set; }
         public string? CustomerName { get; set; }
