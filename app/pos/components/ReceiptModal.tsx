@@ -7,7 +7,8 @@ import { CompletedOrder } from "../context/OrderHistoryContext";
 
 type ReceiptModalProps = {
   order: CompletedOrder;
-  receiptMethod: "print" | "email" | "text" | "none" | null;
+  // Added undefined as a possible state for "waiting for selection"
+  receiptMethod: "print" | "email" | "text" | "none" | null | undefined;
   onClose: () => void;
 };
 
@@ -16,25 +17,25 @@ export default function ReceiptModal({ order, receiptMethod, onClose }: ReceiptM
   /* -------------------------------------------------------
      🧮 Financial Logic (Michigan Tax Exempt)
   ------------------------------------------------------- */
-  const subtotal = order.items.reduce(
+  // Use order values if present, otherwise calculate from items
+  const subtotal = order.subtotal || order.items.reduce(
     (sum, item) => sum + (item.product.price * item.quantity),
     0
   );
 
-  // Calculates the portion of the order that is actually taxable (prepped food/drink)
-  const taxableSubtotal = order.items.reduce((sum, item) => {
-    return item.product.taxable ? sum + (item.product.price * item.quantity) : sum;
-  }, 0);
+  const tax = order.tax !== undefined ? order.tax : 0;
+  const total = order.total || (subtotal + tax);
 
-  const tax = taxableSubtotal * 0.06;
-  const total = subtotal + tax;
-
-  const printEnabled = receiptMethod === "print" || receiptMethod === null;
+  /* -------------------------------------------------------
+     ✅ Logic: Enable Print/Close even if no user choice made (Cash fallback)
+  ------------------------------------------------------- */
+  // Print is enabled if selected, if it's a cash checkout (null), or if explicitly set to none
+  const printEnabled = receiptMethod === "print" || receiptMethod === "none" || receiptMethod === null;
 
   return (
     <div className="h-full w-full flex flex-col bg-white dark:bg-slate-900">
       
-      {/* ⚙️ GUI BANNER (Top) */}
+      {/* ⚙️ GUI BANNER (Top) - Hidden on physical print */}
       <div className="p-6 print:hidden">
         {receiptMethod && (
           <div className="p-4 bg-violet-600 rounded-2xl shadow-lg shadow-violet-600/20 text-center animate-in fade-in slide-in-from-top-2">
@@ -42,7 +43,7 @@ export default function ReceiptModal({ order, receiptMethod, onClose }: ReceiptM
                {receiptMethod === "print" && "🖨️ Customer chose: Print Receipt"}
                {receiptMethod === "email" && "📧 Receipt sent to Email"}
                {receiptMethod === "text" && "📱 Receipt sent to Text"}
-               {receiptMethod === "none" && "🚫 No Receipt Requested"}
+               {receiptMethod === "none" && "✅ Transaction Finalized"}
             </p>
           </div>
         )}
@@ -67,11 +68,12 @@ export default function ReceiptModal({ order, receiptMethod, onClose }: ReceiptM
         )}
 
         <div className="text-[10px] mb-6 space-y-1">
-          <p>ID: {order.id.slice(0, 8).toUpperCase()}</p>
-          <p>{new Date(order.timestamp).toLocaleString()}</p>
+          {/* FIXED: Defensive ID slicing */}
+          <p>ID: {order?.id ? order.id.slice(0, 8).toUpperCase() : "POS-ORDER"}</p>
+          <p>{order.timestamp ? new Date(order.timestamp).toLocaleString() : new Date().toLocaleString()}</p>
         </div>
 
-        {/* Items Table with (E) Indicators */}
+        {/* Items Table */}
         <ul className="space-y-3 mb-6">
           {order.items.map((item, idx) => (
             <li key={idx} className="flex justify-between text-sm items-start">
@@ -110,8 +112,8 @@ export default function ReceiptModal({ order, receiptMethod, onClose }: ReceiptM
           <p>Method: {order.paymentType}</p>
           {order.paymentType === "cash" ? (
             <>
-              <p>Tendered: ${order.cashTendered?.toFixed(2)}</p>
-              <p>Change: ${order.changeGiven?.toFixed(2)}</p>
+              <p>Tendered: ${order.cashTendered?.toFixed(2) || "0.00"}</p>
+              <p>Change: ${order.changeGiven?.toFixed(2) || "0.00"}</p>
             </>
           ) : (
             <p>Entry: {order.cardEntryMethod === "terminal" ? "Chip/Tap/Swipe" : "Manual"}</p>
@@ -122,20 +124,20 @@ export default function ReceiptModal({ order, receiptMethod, onClose }: ReceiptM
             <p className="text-lg font-bold tracking-widest uppercase m-0 leading-none">
               THANK YOU 😊
             </p>
-            <div className="text-[10px]leading-tight uppercase tracking-tight mt-1">
+            <div className="text-[10px] leading-tight uppercase tracking-tight mt-1">
               We appreciate your business <br/>
               Have a wonderful day
             </div>
           </div>
 
-          {/* Fixed Footer Readability */}
+          {/* Footer Readability */}
           <div className="text-[9px] mt-8 opacity-80 text-center uppercase font-bold italic border-t border-gray-100 pt-2">
             (E) = Michigan Tax Exempt Food Item
           </div>
         </div>
       </div>
 
-      {/* ⚙️ GUI CONTROLS (Bottom) */}
+      {/* ⚙️ GUI CONTROLS (Bottom) - Hidden on physical print */}
       <div className="mt-auto p-6 space-y-3 print:hidden bg-violet-50/30 border-t border-violet-100">
         <button
           onClick={() => window.print()}

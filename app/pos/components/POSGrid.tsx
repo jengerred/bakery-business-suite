@@ -324,38 +324,53 @@ export default function POSGrid({
               setShowCheckout(false);
               window.dispatchEvent(new CustomEvent("cashier-cancel-checkout"));
             }}
-            onComplete={(paymentData) => {
-              const { subtotal, tax, total: finalTotal } = calculateTotals(order);
-              const completed: CompletedOrder = {
-                id: crypto.randomUUID(),
-                items: order,
-                subtotal,
-                tax,
-                total: finalTotal,
-                paymentType: paymentData.paymentType,
-                cardEntryMethod: paymentData.cardEntryMethod,
-                cashTendered: paymentData.cashTendered,
-                changeGiven: paymentData.changeGiven,
-                stripePaymentId: paymentData.stripePaymentId,
-                timestamp: Date.now(),
-                customerId: customer?.id ?? null,
-                customerName: customer?.name ?? null,
-              };
-              addOrder(completed);
-              setLastOrder(completed);
-              if (paymentData.paymentType === "cash" || !customer) {
-                 window.dispatchEvent(new CustomEvent("reader-force-thank-you"));
-                 setReceiptMethod(null);
-              } else {
-                 setReceiptMethod(undefined);
-              }
-              setShowReceipt(true);
-              setOrder([]);
-              setShowCheckout(false);
-            }}
+       onComplete={(paymentData) => {
+        const { subtotal, tax, total: finalTotal } = calculateTotals(order);
+        
+        const completedPayload = {
+          id: crypto.randomUUID(), 
+          items: order.map((item) => ({
+            product: item.product,
+            quantity: item.quantity,
+          })),
+          subtotal,
+          tax,
+          total: finalTotal,
+          paymentType: paymentData.paymentType,
+          cardEntryMethod: paymentData.cardEntryMethod || "none",
+          cashTendered: paymentData.cashTendered || 0,
+          changeGiven: paymentData.changeGiven || 0,
+          stripePaymentId: paymentData.stripePaymentId || null,
+          timestamp: new Date().toISOString(), 
+          customerId: customer?.id ?? null,
+          customerName: customer?.name ?? null,
+          status: "paid",
+          fulfillmentType: "POS",
+          address: "",
+          city: "",
+          state: "",
+          zip: "",
+          notes: "",
+        };
+
+        const finalOrderForBackend = { dto: completedPayload };
+        addOrder(finalOrderForBackend as any);
+
+        // ⭐ FIXED RECEIPT LOGIC FOR CASH/GUEST
+        if (paymentData.paymentType === "cash" || !customer) {
+          setReceiptMethod("none");
+          window.dispatchEvent(new CustomEvent("reader-force-thank-you"));
+        } else {
+          setReceiptMethod(undefined);
+        }
+
+        setLastOrder(completedPayload as any); 
+        setShowReceipt(true);
+        setOrder([]);
+        setShowCheckout(false);
+      }}
           />
         )}
-
         {showReceipt && lastOrder && (
           <div className="fixed top-0 left-0 h-full w-[420px] bg-white dark:bg-slate-900 shadow-2xl z-50 p-6 overflow-y-auto transition-colors">
             <ReceiptModal
@@ -376,4 +391,3 @@ export default function POSGrid({
     </div>
   );
 }
-

@@ -28,51 +28,62 @@ export default function CartDrawer({
   const finalTotal = subtotal + shippingFee;
 
   /* -----------------------------------------------------------
-     🚀 NEW: BACKEND INTEGRATION LOGIC
+     🚀 BACKEND INTEGRATION LOGIC
   ----------------------------------------------------------- */
-const handleSubmitOrder = async (paymentType: "card" | "cash", stripeId?: string) => { 
-  
-  // Mapping your frontend data to your C# OrderDto
-    const orderPayload = {
-      customerName: formData.name,
-      customerEmail: formData.email,
-      customerPhone: formData.phone,
-      fulfillmentType: method,
-      address: formData.address,
-      city: formData.city,
-      zip: formData.zip,
-      items: cart.map((item: any) => ({
-        product: item.product,
-        quantity: item.quantity
-      })),
-      subtotal: subtotal,
-      tax: 0, // Currently 0 per your requirement
-      total: finalTotal,
-      paymentType: paymentType,
-      status: "paid", // Matches your Supabase constraint
-      timestamp: Date.now()
-    };
 
-    try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/orders`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(orderPayload),
-      });
+  const handleSubmitOrder = async (paymentType: "card" | "cash", stripeId?: string) => { 
+  setIsSubmitting(true);
 
-      if (res.ok) {
-        setView("success");
-      } else {
-        const err = await res.json();
-        alert(`Order failed: ${err.message || "Unknown Error"}`);
-      }
-    } catch (err) {
-      console.error("Fetch Error:", err);
-      alert("Could not connect to Railway backend.");
-    } finally {
-      setIsSubmitting(false);
-    }
+  // 1. Create a C#-friendly ISO date string
+  const isoTimestamp = new Date().toISOString();
+
+  // 2. Build the payload to match OrderDto exactly
+  const orderPayload = {
+    customerName: formData.name,
+    customerEmail: formData.email,
+    customerPhone: formData.phone,
+    fulfillmentType: method,
+    address: formData.address || "", // Ensure empty strings instead of null
+    city: formData.city || "",
+    state: "", // Add missing fields from DTO
+    zip: formData.zip || "",
+    notes: "",
+    items: cart.map((item: any) => ({
+      product: item.product,
+      quantity: item.quantity
+    })),
+    subtotal: subtotal,
+    tax: 0,
+    total: finalTotal,
+    paymentType: paymentType === "card" ? "Card" : "Cash",
+    stripePaymentId: stripeId || null,
+    status: "paid",
+    timestamp: isoTimestamp // Fixed: Now a string that .NET can parse
   };
+
+  try {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/orders`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      // Fixed: Wrapped in a 'dto' key to match the backend [FromBody] OrderDto dto
+      body: JSON.stringify({ dto: orderPayload }), 
+    });
+
+    if (res.ok) {
+      setView("success");
+    } else {
+      // Log the specific validation errors from the backend
+      const err = await res.json();
+      console.error("Validation Errors:", err.errors);
+      alert(`Order failed: Check console for validation details`);
+    }
+  } catch (err) {
+    console.error("Fetch Error:", err);
+    alert("Could not connect to Railway backend.");
+  } finally {
+    setIsSubmitting(false);
+  }
+};
 
   const handleAction = (nextView: "payment" | "success") => {
     if (isFormValid()) {
@@ -250,7 +261,7 @@ const handleSubmitOrder = async (paymentType: "card" | "cash", stripeId?: string
               onUpdateQuantity={onUpdateQuantity}
               onRemove={onRemove}
             />
-            
+
             </Elements>
           )}
 
