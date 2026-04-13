@@ -262,8 +262,7 @@ export default function POSGrid({
                 Notes: paymentData.notes || "",
               };
 
-              // Wrap in 'dto' so the backend can map it to the OrderDto class
-              addOrder({ dto: completedPayload } as any);
+              addOrder(completedPayload as any);
 
               if (paymentData.paymentType === "cash" || !customer) {
                 setReceiptMethod("none");

@@ -28,48 +28,46 @@ export default function CartDrawer({
   const finalTotal = subtotal + shippingFee;
 
   /* -----------------------------------------------------------
-     🚀 BACKEND INTEGRATION (23-Column Sync)
+     🚀 BACKEND INTEGRATION (23-Column Sync - FLAT VERSION)
   ----------------------------------------------------------- */
   const handleSubmitOrder = async (paymentType: "card" | "cash", stripeId?: string) => { 
     setIsSubmitting(true);
 
-    const isoTimestamp = new Date().toISOString();
-
     // Mapping to match your C# OrderDto perfectly
     const orderPayload = {
-      // Identity & Items (Column 2)
+      // Identity & Items
       Items: cart.map((item: any) => ({
         Product: item.product,
         Quantity: item.quantity
       })),
-      Timestamp: isoTimestamp,
+      // Note: We'll let the database handle the Timestamp via created_at
 
-      // Accounting (Columns 3-5)
+      // Accounting
       Subtotal: subtotal,
       Tax: 0, 
       Total: finalTotal,
 
-      // Customer Details (Columns 12-15)
+      // Customer Details
       CustomerName: formData.name,
       CustomerEmail: formData.email,
       CustomerPhone: formData.phone,
       CustomerId: "", 
 
-      // Fulfillment (Columns 16-18)
-      FulfillmentType: method,
+      // Fulfillment
+      FulfillmentType: method === "shipping" ? "Delivery" : "Pickup",
       PickupTime: method === "pickup" ? "Friday @ 12:00 PM" : "Shipping",
       Status: "paid",
 
-      // Address Info (Columns 19-22)
+      // Address Info
       Address: formData.address || "In-Store",
       City: formData.city || "Grand Rapids",
       State: "MI", 
       Zip: formData.zip || "",
-      Notes: "",
+      Notes: "Online Order",
 
-      // Payment Info (Columns 6-10)
+      // Payment Info
       PaymentType: paymentType === "card" ? "Card" : "Cash",
-      CardEntryMethod: paymentType === "card" ? "manual" : "none",
+      CardEntryMethod: paymentType === "card" ? "online" : "none",
       StripePaymentId: stripeId || "",
       CashTendered: 0, 
       ChangeGiven: 0   
@@ -79,8 +77,8 @@ export default function CartDrawer({
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/orders`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        // Wrapped in 'dto' to match [FromBody] OrderDto dto
-        body: JSON.stringify({ dto: orderPayload }), 
+        // ✅ FIXED: Sending FLAT payload, no 'dto' wrapper
+        body: JSON.stringify(orderPayload),
       });
 
       if (res.ok) {
