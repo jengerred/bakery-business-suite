@@ -254,15 +254,18 @@ export default function POSGrid({
                 CustomerPhone: customer?.phone || "",
                 Status: "paid",
                 FulfillmentType: "POS",
-                PickupTime: paymentData.pickupTime || new Date().toISOString(),
+                // ✅ FIX: Must be ISO string for C# DateTime column
+                PickupTime: new Date().toISOString(), 
                 Address: customerData?.address || "",
                 City: customerData?.city || "",
                 State: customerData?.state || "MI",
                 Zip: customerData?.zip || "",
+                // ✅ FIX: Notes can store the raw display text if needed
                 Notes: paymentData.notes || "",
               };
 
-              addOrder(completedPayload as any);
+              // ✅ FIX: Wrap in 'dto' key to match backend OrderDto parameter
+              addOrder({ dto: completedPayload } as any);
 
               if (paymentData.paymentType === "cash" || !customer) {
                 setReceiptMethod("none");

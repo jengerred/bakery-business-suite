@@ -28,44 +28,38 @@ export default function CartDrawer({
   const finalTotal = subtotal + shippingFee;
 
   /* -----------------------------------------------------------
-     🚀 BACKEND INTEGRATION (23-Column Sync - FLAT VERSION)
+     🚀 BACKEND INTEGRATION (23-Column Sync)
   ----------------------------------------------------------- */
   const handleSubmitOrder = async (paymentType: "card" | "cash", stripeId?: string) => { 
     setIsSubmitting(true);
 
-    // Mapping to match your C# OrderDto perfectly
-    const orderPayload = {
-      // Identity & Items
+    // 1. Construct the data object exactly as C# expects it
+    const orderData = {
       Items: cart.map((item: any) => ({
         Product: item.product,
         Quantity: item.quantity
       })),
-      // Note: We'll let the database handle the Timestamp via created_at
-
-      // Accounting
       Subtotal: subtotal,
       Tax: 0, 
       Total: finalTotal,
-
-      // Customer Details
       CustomerName: formData.name,
       CustomerEmail: formData.email,
       CustomerPhone: formData.phone,
       CustomerId: "", 
-
-      // Fulfillment
       FulfillmentType: method === "shipping" ? "Delivery" : "Pickup",
-      PickupTime: method === "pickup" ? "Friday @ 12:00 PM" : "Shipping",
-      Status: "paid",
 
-      // Address Info
+      // ✅ FIX: PickupTime must be a valid ISO string for the C# DateTime parser
+      PickupTime: new Date().toISOString(), 
+
+      Status: "paid",
       Address: formData.address || "In-Store",
       City: formData.city || "Grand Rapids",
       State: "MI", 
       Zip: formData.zip || "",
-      Notes: "Online Order",
 
-      // Payment Info
+      // ✅ FIX: Move "Friday @ 12:00 PM" to Notes so it doesn't crash the Date column
+      Notes: method === "pickup" ? "Friday @ 12:00 PM" : "Online Order",
+
       PaymentType: paymentType === "card" ? "Card" : "Cash",
       CardEntryMethod: paymentType === "card" ? "online" : "none",
       StripePaymentId: stripeId || "",
@@ -77,8 +71,8 @@ export default function CartDrawer({
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/orders`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        // ✅ FIXED: Sending FLAT payload, no 'dto' wrapper
-        body: JSON.stringify(orderPayload),
+        // ✅ FIX: Wrapped in 'dto' key to satisfy [FromBody] OrderDto dto
+        body: JSON.stringify({ dto: orderData }),
       });
 
       if (res.ok) {
@@ -187,7 +181,7 @@ export default function CartDrawer({
                     </div>
                     <span className="text-stone-300 group-hover:text-violet-600 font-bold">→</span>
                   </button>
-                  <button onClick={() => { setMethod("shipping"); setView("details"); }} className="w-full p-5 bg-white border-2 border-violet-200 rounded-3xl hover:border-violet-600 transition-all flex items-center justify-between group">
+                  <button onClick={() => { setMethod("shipping"); setMethod("shipping"); setView("details"); }} className="w-full p-5 bg-white border-2 border-violet-200 rounded-3xl hover:border-violet-600 transition-all flex items-center justify-between group">
                     <div className="flex items-center gap-4">
                       <span className="text-3xl">📦</span>
                       <div className="text-left">

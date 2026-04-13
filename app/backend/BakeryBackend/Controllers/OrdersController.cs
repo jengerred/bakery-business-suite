@@ -21,8 +21,9 @@ namespace BakeryBackend.Controllers
         // POST /orders
         // Creates a new order in the database
         // ----------------------------------------------------
+        
         [HttpPost]
-        public async Task<IActionResult> CreateOrder([FromBody] OrderDto dto)
+        public async Task<IActionResult> CreateOrder([FromBody] OrderDto order) // This will now accept the flat fields
         {
             if (dto == null)
                 return BadRequest("Order payload is missing.");
