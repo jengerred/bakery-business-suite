@@ -44,7 +44,7 @@ type Props = {
 };
 
 export default function POSGrid({
-  order,
+  order = [], // Default to empty array to prevent .reduce crashes
   setOrder,
   selectedProduct,
   setSelectedProduct,
@@ -73,8 +73,9 @@ export default function POSGrid({
   const [isExpanded, setIsExpanded] = useState(false);
   const [isNavOpen, setIsNavOpen] = useState(false);
 
-  const { total } = calculateTotals(order);
-  const isOrderEmpty = order.length === 0;
+  // Safely calculate total for UI
+  const { total } = calculateTotals(order || []);
+  const isOrderEmpty = !order || order.length === 0;
 
   const handleUpdateQty = (productId: number, newQty: number) => {
     setOrder((prev: any[]) =>
@@ -120,7 +121,7 @@ export default function POSGrid({
     window.dispatchEvent(new CustomEvent("cashier-receipt-done"));
   }
 
- return (
+  return (
     <div 
       className="relative min-h-screen flex flex-col gap-4 px-8 py-2 overflow-hidden" 
       style={{
@@ -134,43 +135,42 @@ export default function POSGrid({
       <div className="absolute inset-0 bg-violet-300/70 pointer-events-none z-0" />
 
       <div className="relative z-10 flex flex-col gap-4">
-       
-      {/* NAV SECTION */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between px-6 py-2 gap-4">
-        <div className="flex flex-col sm:flex-row sm:items-center gap-3 w-full sm:w-auto">
-          <button
-            className="sm:hidden px-4 py-2 bg-violet-600 text-white rounded-xl font-black uppercase tracking-widest text-xs shadow-md active:scale-95"
-            onClick={() => setIsNavOpen(!isNavOpen)}
-          >
-            Menu
+        {/* NAV SECTION */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between px-6 py-2 gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 w-full sm:w-auto">
+            <button
+              className="sm:hidden px-4 py-2 bg-violet-600 text-white rounded-xl font-black uppercase tracking-widest text-xs shadow-md active:scale-95"
+              onClick={() => setIsNavOpen(!isNavOpen)}
+            >
+              Menu
+            </button>
+
+            <div className="hidden sm:flex gap-3 p-1.5 bg-white/20 backdrop-blur-md rounded-2xl border border-white/30 shadow-sm">
+              <button className="relative px-6 py-2.5 bg-violet-600 text-white rounded-xl font-black uppercase tracking-widest text-xs shadow-md transition-all active:scale-95 flex items-center gap-3">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.8)]"></span>
+                </span>
+                Register
+              </button>
+              <Link href="/pos/transactions" className="px-6 py-2.5 bg-violet-200/40 hover:bg-violet-600 hover:text-white text-violet-700 rounded-xl font-bold uppercase tracking-widest text-xs transition-all active:scale-95 border border-white/20">
+                Transactions
+              </Link>
+              <Link href="/pos/employee" className="px-6 py-2.5 bg-violet-100/50 hover:bg-violet-600 hover:text-white text-violet-700 rounded-xl font-bold uppercase tracking-widest text-xs transition-all active:scale-95 border border-white/20">
+                Employee
+              </Link>
+            </div>
+          </div>
+
+          <button onClick={() => setIsLogoutOpen(true)} className="group flex items-center gap-2 px-5 py-2.5 bg-red-500 text-white rounded-xl font-black uppercase tracking-widest text-xs shadow-lg hover:bg-red-600 transition-all active:scale-90">
+            Exit
           </button>
 
-          <div className="hidden sm:flex gap-3 p-1.5 bg-white/20 backdrop-blur-md rounded-2xl border border-white/30 shadow-sm">
-            <button className="relative px-6 py-2.5 bg-violet-600 text-white rounded-xl font-black uppercase tracking-widest text-xs shadow-md transition-all active:scale-95 flex items-center gap-3">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.8)]"></span>
-              </span>
-              Register
-            </button>
-            <Link href="/pos/transactions" className="px-6 py-2.5 bg-violet-200/40 hover:bg-violet-600 hover:text-white text-violet-700 rounded-xl font-bold uppercase tracking-widest text-xs transition-all active:scale-95 border border-white/20">
-              Transactions
-            </Link>
-            <Link href="/pos/employee" className="px-6 py-2.5 bg-violet-100/50 hover:bg-violet-600 hover:text-white text-violet-700 rounded-xl font-bold uppercase tracking-widest text-xs transition-all active:scale-95 border border-white/20">
-              Employee
-            </Link>
-          </div>
+          <LogoutModal isOpen={isLogoutOpen} onClose={() => setIsLogoutOpen(false)} onConfirm={() => setIsLogoutOpen(false)} />
         </div>
 
-        <button onClick={() => setIsLogoutOpen(true)} className="group flex items-center gap-2 px-5 py-2.5 bg-red-500 text-white rounded-xl font-black uppercase tracking-widest text-xs shadow-lg hover:bg-red-600 transition-all active:scale-90">
-          Exit
-        </button>
-
-        <LogoutModal isOpen={isLogoutOpen} onClose={() => setIsLogoutOpen(false)} onConfirm={() => setIsLogoutOpen(false)} />
-      </div>
-
-       <div className="grid grid-cols-1 gap-6 items-start min-[850px]:grid-cols-12">
-         <div className="col-span-1 min-[850px]:col-span-8">
+        <div className="grid grid-cols-1 gap-6 items-start min-[850px]:grid-cols-12">
+          <div className="col-span-1 min-[850px]:col-span-8">
             <section className="p-6 border rounded-[2.5rem] bg-violet-950/90 shadow-xl shadow-violet-900 h-[480px] overflow-y-auto custom-scrollbar">
               <h2 className="inline-block text-xl font-black text-violet-200 uppercase tracking-[0.2em] sticky top-0 z-10 bg-violet-500/80 backdrop-blur-xl border border-violet-700/40 px-4 py-2 rounded-xl shadow-md">🧁 Our Menu</h2>
               <ProductList onAdd={(product, qty, price) => openProductModal(product, qty, price)} />
@@ -201,16 +201,16 @@ export default function POSGrid({
 
         <div className="mt-6">
           <div className="p-10 pb-15 bg-violet-950/90 border border-violet-500 rounded-[2.5rem]">
-              <button
-                onClick={handleBeginCheckout}
-                disabled={isOrderEmpty}
-                className={`w-full py-4 rounded-[1.8rem] font-black uppercase tracking-widest transition-all duration-300 flex flex-col items-center justify-center gap-1 active:scale-95 ${
-                  isOrderEmpty ? "bg-violet-900/20 text-violet-300/20 cursor-not-allowed" : "bg-green-500 text-white shadow-xl shadow-green-300" 
-                }`}
-              >
-                <span className="text-4xl italic tracking-tighter drop-shadow-md">{isOrderEmpty ? "Empty Basket" : "Checkout"}</span>
-                {!isOrderEmpty && <span className="text-xl font-bold tracking-widest text-green-50">Total: ${total.toFixed(2)}</span>}
-              </button>
+            <button
+              onClick={handleBeginCheckout}
+              disabled={isOrderEmpty}
+              className={`w-full py-4 rounded-[1.8rem] font-black uppercase tracking-widest transition-all duration-300 flex flex-col items-center justify-center gap-1 active:scale-95 ${
+                isOrderEmpty ? "bg-violet-900/20 text-violet-300/20 cursor-not-allowed" : "bg-green-500 text-white shadow-xl shadow-green-300" 
+              }`}
+            >
+              <span className="text-4xl italic tracking-tighter drop-shadow-md">{isOrderEmpty ? "Empty Basket" : "Checkout"}</span>
+              {!isOrderEmpty && <span className="text-xl font-bold tracking-widest text-green-50">Total: ${total.toFixed(2)}</span>}
+            </button>
           </div>
           <section className="mt-8 p-4 border rounded-[2rem] bg-white/60 backdrop-blur-xl border-violet-100 shadow-lg">
             <CardReaderContainer terminal={terminal} />
@@ -228,9 +228,10 @@ export default function POSGrid({
               window.dispatchEvent(new CustomEvent("cashier-cancel-checkout"));
             }}
             onComplete={(paymentData) => {
+              // Safety check before running calculateTotals logic
+              if (!order || order.length === 0) return;
+
               const { subtotal, tax, total: finalTotal } = calculateTotals(order);
-              
-              // Cast customer as any to avoid 'property does not exist' errors
               const customerData = customer as any;
 
               const completedPayload = {
@@ -254,7 +255,6 @@ export default function POSGrid({
                 Status: "paid",
                 FulfillmentType: "POS",
                 PickupTime: paymentData.pickupTime || new Date().toISOString(),
-                // Accessing address fields via the casted object
                 Address: customerData?.address || "",
                 City: customerData?.city || "",
                 State: customerData?.state || "MI",
@@ -262,7 +262,8 @@ export default function POSGrid({
                 Notes: paymentData.notes || "",
               };
 
-              addOrder(completedPayload as any);
+              // Wrap in 'dto' so the backend can map it to the OrderDto class
+              addOrder({ dto: completedPayload } as any);
 
               if (paymentData.paymentType === "cash" || !customer) {
                 setReceiptMethod("none");
