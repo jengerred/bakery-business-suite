@@ -79,9 +79,9 @@ namespace BakeryBackend.Data
             {
                 entity.ToTable("Products"); // Matches Supabase casing
                 entity.Property(p => p.Id).HasColumnName("Id");
-                entity.Property(p => p.Name).HasColumnName("name");
-                entity.Property(p => p.Price).HasColumnName("price");
-                entity.Property(p => p.Description).HasColumnName("description");
+                entity.Property(p => p.Name).HasColumnName("Name");
+                entity.Property(p => p.Price).HasColumnName("Price");
+                entity.Property(p => p.Description).HasColumnName("Description");
                 entity.Property(p => p.ImageUrl).HasColumnName("image_url");
                 entity.Property(p => p.SortOrder).HasColumnName("sort_order");
             });
