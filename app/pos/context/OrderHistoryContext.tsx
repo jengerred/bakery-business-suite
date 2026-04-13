@@ -23,11 +23,17 @@ export type CompletedOrder = {
   changeGiven?: number;
   stripePaymentId?: string | null;
   
-  // Use string to support ISO dates for C#
-  timestamp: string; 
+ // Use created_at to match Supabase convention
+  created_at?: string; 
+  timestamp: string;
+
+  pickupTime?: string;
 
   customerId: string | null;
   customerName: string | null;
+  customerEmail: string | null; 
+  customerPhone: string | null;
+
   status: string;
   fulfillmentType: string;
   address: string;
@@ -76,27 +82,65 @@ export function OrderHistoryProvider({ children }: { children: React.ReactNode }
      ------------------------------------------------------- */
   const addOrder = async (order: CompletedOrder) => {
     try {
+      const payload = {
+        dto: {
+          // IDs & Timestamps
+          Id: order.id || crypto.randomUUID(),
+          Timestamp: new Date().toISOString(), // C# maps this to your created_at logic
+          
+          // Accounting (Ensure these are numbers)
+          Subtotal: Number(order.subtotal) || 0,
+          Tax: Number(order.tax) || 0,
+          Total: Number(order.total) || 0,
+          
+          // Items (Send as a raw array, NOT JSON.stringify)
+          Items: order.items, 
+
+          // Payment Details
+          PaymentType: order.paymentType,
+          CardEntryMethod: order.cardEntryMethod || "none",
+          CashTendered: Number(order.cashTendered) || 0,
+          ChangeGiven: Number(order.changeGiven) || 0,
+          StripePaymentId: order.stripePaymentId || "",
+
+          // Customer Info
+          CustomerId: order.customerId || "",
+          CustomerName: order.customerName || "Guest",
+          CustomerEmail: order.customerEmail || "",
+          CustomerPhone: order.customerPhone || "",
+
+          // Fulfillment (The new missing pieces)
+          Status: order.status || "paid",
+          FulfillmentType: order.fulfillmentType || "POS",
+          PickupTime: order.pickupTime || "", // Added this specifically
+          
+          // Address Info
+          Address: order.address || "",
+          City: order.city || "",
+          State: order.state || "",
+          Zip: order.zip || "",
+          Notes: order.notes || ""
+        }
+      };
+
       const res = await fetch(`${API}/api/orders`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        // FIXED: Backend requires the object to be wrapped in a "dto" property
-        body: JSON.stringify({ dto: order }),
+        body: JSON.stringify(payload),
       });
 
       if (!res.ok) {
-        const errorData = await res.json();
-        console.error("Backend Validation Error:", errorData);
-        throw new Error("Failed to save order to backend");
+        const errorText = await res.text();
+        console.error("Backend Error:", errorText);
+        throw new Error("Backend rejected the data mapping.");
       }
 
       const saved = await res.json();
       setOrderHistory((prev) => [...prev, saved]);
     } catch (err: any) {
       setError(err.message);
-      console.error("AddOrder Error:", err);
     }
   };
-
   const clearHistory = async () => {
     try {
       const res = await fetch(`${API}/api/orders`, { method: "DELETE" });

@@ -67,6 +67,8 @@ export function createCompletedOrder(
     // Overwritten in POSGrid using CustomerContext
     customerId: null,
     customerName: null,
+   customerEmail: paymentData.customerEmail || "", 
+   customerPhone: paymentData.customerPhone || "",
     status: "paid",              // Required property
     fulfillmentType: "POS",      // Required property
     address: "",                 // Required property

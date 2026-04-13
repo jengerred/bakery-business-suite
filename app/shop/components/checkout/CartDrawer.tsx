@@ -21,74 +21,86 @@ export default function CartDrawer({
   const [method, setMethod] = useState<"pickup" | "shipping">("pickup");
   const [formData, setFormData] = useState({ name: "", email: "", phone: "", address: "", city: "", zip: "" });
   const [showErrors, setShowErrors] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false); // NEW: Prevents double-clicks
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const subtotal = cart.reduce((acc: number, item: any) => acc + (item.product.price * item.quantity), 0);
   const shippingFee = method === "shipping" ? 12.00 : 0;
   const finalTotal = subtotal + shippingFee;
 
   /* -----------------------------------------------------------
-     🚀 BACKEND INTEGRATION LOGIC
+     🚀 BACKEND INTEGRATION (23-Column Sync)
   ----------------------------------------------------------- */
-
   const handleSubmitOrder = async (paymentType: "card" | "cash", stripeId?: string) => { 
-  setIsSubmitting(true);
+    setIsSubmitting(true);
 
-  // 1. Create a C#-friendly ISO date string
-  const isoTimestamp = new Date().toISOString();
+    const isoTimestamp = new Date().toISOString();
 
-  // 2. Build the payload to match OrderDto exactly
-  const orderPayload = {
-    customerName: formData.name,
-    customerEmail: formData.email,
-    customerPhone: formData.phone,
-    fulfillmentType: method,
-    address: formData.address || "", // Ensure empty strings instead of null
-    city: formData.city || "",
-    state: "", // Add missing fields from DTO
-    zip: formData.zip || "",
-    notes: "",
-    items: cart.map((item: any) => ({
-      product: item.product,
-      quantity: item.quantity
-    })),
-    subtotal: subtotal,
-    tax: 0,
-    total: finalTotal,
-    paymentType: paymentType === "card" ? "Card" : "Cash",
-    stripePaymentId: stripeId || null,
-    status: "paid",
-    timestamp: isoTimestamp // Fixed: Now a string that .NET can parse
-  };
+    // Mapping to match your C# OrderDto perfectly
+    const orderPayload = {
+      // Identity & Items (Column 2)
+      Items: cart.map((item: any) => ({
+        Product: item.product,
+        Quantity: item.quantity
+      })),
+      Timestamp: isoTimestamp,
 
-  try {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/orders`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      // Fixed: Wrapped in a 'dto' key to match the backend [FromBody] OrderDto dto
-      body: JSON.stringify({ dto: orderPayload }), 
-    });
+      // Accounting (Columns 3-5)
+      Subtotal: subtotal,
+      Tax: 0, 
+      Total: finalTotal,
 
-    if (res.ok) {
-      setView("success");
-    } else {
-      // Log the specific validation errors from the backend
-      const err = await res.json();
-      console.error("Validation Errors:", err.errors);
-      alert(`Order failed: Check console for validation details`);
+      // Customer Details (Columns 12-15)
+      CustomerName: formData.name,
+      CustomerEmail: formData.email,
+      CustomerPhone: formData.phone,
+      CustomerId: "", 
+
+      // Fulfillment (Columns 16-18)
+      FulfillmentType: method,
+      PickupTime: method === "pickup" ? "Friday @ 12:00 PM" : "Shipping",
+      Status: "paid",
+
+      // Address Info (Columns 19-22)
+      Address: formData.address || "In-Store",
+      City: formData.city || "Grand Rapids",
+      State: "MI", 
+      Zip: formData.zip || "",
+      Notes: "",
+
+      // Payment Info (Columns 6-10)
+      PaymentType: paymentType === "card" ? "Card" : "Cash",
+      CardEntryMethod: paymentType === "card" ? "manual" : "none",
+      StripePaymentId: stripeId || "",
+      CashTendered: 0, 
+      ChangeGiven: 0   
+    };
+
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/orders`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        // Wrapped in 'dto' to match [FromBody] OrderDto dto
+        body: JSON.stringify({ dto: orderPayload }), 
+      });
+
+      if (res.ok) {
+        setView("success");
+      } else {
+        const err = await res.json();
+        console.error("Validation Errors:", err);
+        alert(`Order failed: ${JSON.stringify(err.errors || err)}`);
+      }
+    } catch (err) {
+      console.error("Fetch Error:", err);
+      alert("Could not connect to Railway backend.");
+    } finally {
+      setIsSubmitting(false);
     }
-  } catch (err) {
-    console.error("Fetch Error:", err);
-    alert("Could not connect to Railway backend.");
-  } finally {
-    setIsSubmitting(false);
-  }
-};
+  };
 
   const handleAction = (nextView: "payment" | "success") => {
     if (isFormValid()) {
       if (nextView === "success") {
-        // "Pay at Pickup" chosen -> Submit immediately
         handleSubmitOrder("cash");
       } else {
         setView(nextView);
@@ -118,10 +130,10 @@ export default function CartDrawer({
   if (!isOpen) return null;
 
   const handleToggleMethod = () => {
-  setMethod(prev => prev === 'pickup' ? 'shipping' : 'pickup');
-  if (view === "payment") setView("details");
-  setShowErrors(false);
-};
+    setMethod(prev => prev === 'pickup' ? 'shipping' : 'pickup');
+    if (view === "payment") setView("details");
+    setShowErrors(false);
+  };
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
@@ -153,7 +165,6 @@ export default function CartDrawer({
               </button>
             </div>
           )}
-
           <h1 className="text-sm font-bold text-stone-900 leading-tight mt-6">
             Veronica Bowens <br/>
             <span className="italic text-violet-600 text-base uppercase tracking-tight">Mothers Secret Recipe</span> <br/>
@@ -162,8 +173,6 @@ export default function CartDrawer({
         </div>
 
         <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
-          
-          {/* VIEW 1: METHODS */}
           {view === "methods" && (
             <div className="p-1">
               <OrderSummary cart={cart} method={null} subtotal={subtotal} finalTotal={subtotal} onIncrement={onIncrement} onDecrement={onDecrement} onUpdateQuantity={onUpdateQuantity} onRemove={onRemove} />
@@ -195,7 +204,6 @@ export default function CartDrawer({
             </div>
           )}
 
-          {/* VIEW 2: DETAILS */}
           {view === "details" && (
             <div className="space-y-3">
               <div className="mb-8 p-5 rounded-3xl border-2 border-violet-300/50 border-dashed bg-violet-100 shadow-inner space-y-3">
@@ -224,7 +232,7 @@ export default function CartDrawer({
                 <button 
                   disabled={isSubmitting}
                   onClick={() => handleAction("payment")} 
-                  className="w-full py-5 bg-violet-600 text-white rounded-[2rem] font-bold uppercase tracking-[0.2em] shadow-xl hover:scale-[1.02] transition-all disabled:opacity-50"
+                  className="w-full py-5 bg-violet-600 text-white rounded-[2rem] font-bold uppercase tracking-[0.2em] shadow-xl hover:scale-[1.02] active:scale-95 disabled:opacity-50"
                 >
                   Pay Now
                 </button>
@@ -241,7 +249,6 @@ export default function CartDrawer({
             </div>
           )}
 
-         {/* VIEW 3: STRIPE PAYMENT */}
           {view === "payment" && (
             <Elements stripe={stripePromise} options={{ 
                 mode: 'payment', 
@@ -254,22 +261,19 @@ export default function CartDrawer({
               onBack={() => setView("details")} 
               cart={cart} 
               method={method} 
-              onSwitchToToggle={handleToggleMethod} // Now it exists!
-              onPaymentSuccess={(stripeId) => handleSubmitOrder("card", stripeId)} // Now it expects 2 args!
+              onSwitchToToggle={handleToggleMethod}
+              onPaymentSuccess={(stripeId) => handleSubmitOrder("card", stripeId)}
               onIncrement={onIncrement}
               onDecrement={onDecrement}
               onUpdateQuantity={onUpdateQuantity}
               onRemove={onRemove}
             />
-
             </Elements>
           )}
 
-          {/* VIEW 4: SUCCESS */}
           {view === "success" && (
             <div className="text-center space-y-6 py-12 animate-in fade-in zoom-in duration-500">
-               {/* (Success content remains the same) */}
-               <div className="relative inline-block">
+              <div className="relative inline-block">
                 <span className="text-6xl">✨</span>
                 <span className="absolute -top-2 -right-2 text-2xl animate-bounce">🍪</span>
               </div>
