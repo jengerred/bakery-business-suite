@@ -40,6 +40,7 @@ namespace BakeryBackend.Data
             {
                 entity.ToTable("Orders"); // Matches Supabase casing
 
+                /* All table column names must match Supabase casing. */
                 entity.HasKey(o => o.Id);
                 entity.Property(o => o.Id).HasColumnName("id");
 
@@ -78,6 +79,8 @@ namespace BakeryBackend.Data
             modelBuilder.Entity<Product>(entity =>
             {
                 entity.ToTable("Products"); // Matches Supabase casing
+                
+                /* All table column names must match Supabase casing. */
                 entity.Property(p => p.Id).HasColumnName("Id");
                 entity.Property(p => p.Name).HasColumnName("Name");
                 entity.Property(p => p.Price).HasColumnName("Price");
