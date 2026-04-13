@@ -1,68 +1,37 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import type { CompletedOrder } from "@/app/pos/context/OrderHistoryContext";
 
 export function useManagerDashboard() {
-  const [orders, setOrders] = useState([]);
-
-  // Your backend URL (local or Railway depending on environment)
+  const [orders, setOrders] = useState<CompletedOrder[]>([]);
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
   useEffect(() => {
     async function load() {
       try {
         const res = await fetch(`${API_URL}/api/orders`);
+        if (!res.ok) throw new Error("Failed to fetch");
         const data = await res.json();
         setOrders(data);
       } catch (err) {
-        console.error("Failed to load orders:", err);
+        console.error("Manager API Error:", err);
       }
     }
-
-    load();
+    if (API_URL) load();
   }, [API_URL]);
 
-  // -------------------------------------------------------
-  // 🗓️ Filter today's orders
-  // -------------------------------------------------------
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  const todayOrders = orders.filter((o: any) => {
-    const ts = new Date(o.timestamp);
-    return ts >= today;
-  });
-
-  // -------------------------------------------------------
-  // 📊 Metrics
-  // -------------------------------------------------------
-  const totalSales = todayOrders.reduce(
-    (sum: number, o: any) => sum + o.total,
-    0
-  );
-
-  const totalOrders = todayOrders.length;
-
-  const avgOrderValue =
-    totalOrders > 0 ? totalSales / totalOrders : 0;
-
-  // -------------------------------------------------------
-  // 💳 Payment breakdown
-  // -------------------------------------------------------
-  const cashSales = todayOrders
-    .filter((o: any) => o.paymentType === "cash")
-    .reduce((sum: number, o: any) => sum + o.total, 0);
-
-  const cardSales = todayOrders
-    .filter((o: any) => o.paymentType === "card")
-    .reduce((sum: number, o: any) => sum + o.total, 0);
+  const todayOrders = orders.filter((o) => new Date(o.timestamp) >= today);
 
   return {
     todayOrders,
-    totalSales,
-    totalOrders,
-    avgOrderValue,
-    cashSales,
-    cardSales,
+    totalSales: todayOrders.reduce((sum, o) => sum + o.total, 0),
+    totalOrders: todayOrders.length,
+    avgOrderValue: todayOrders.length > 0 ? todayOrders.reduce((sum, o) => sum + o.total, 0) / todayOrders.length : 0,
+    cashSales: todayOrders.filter(o => o.paymentType === "cash").reduce((s, o) => s + o.total, 0),
+    cardSales: todayOrders.filter(o => o.paymentType !== "cash").reduce((s, o) => s + o.total, 0),
   };
 }
