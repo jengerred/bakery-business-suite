@@ -58,7 +58,7 @@ namespace BakeryBackend.Data
                 entity.Property(o => o.CashTendered).HasColumnName("cash_tendered");
                 entity.Property(o => o.ChangeGiven).HasColumnName("change_given");
                 entity.Property(o => o.StripePaymentId).HasColumnName("stripe_payment_id");
-                entity.Property(o => o.Timestamp).HasColumnName("created_at");
+                entity.Property(o => o.CreatedAt).HasColumnName("created_at");
                 entity.Property(o => o.CustomerId).HasColumnName("customer_id");
                 entity.Property(o => o.CustomerName).HasColumnName("customer_name");
                 entity.Property(o => o.PickupTime).HasColumnName("pickup_time");
