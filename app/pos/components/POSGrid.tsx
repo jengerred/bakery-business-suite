@@ -273,7 +273,6 @@ export default function POSGrid({
           // ⭐ Use backend order for receipt
           setLastOrder(savedOrder);
 
-          addOrder(savedOrder);
 
           if (paymentData.paymentType === "cash" || !customer) {
             setReceiptMethod("none");

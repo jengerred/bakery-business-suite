@@ -62,7 +62,7 @@ export function createCompletedOrder(
     changeGiven: paymentData.changeGiven,    // For cash payments
 
     stripePaymentId: paymentData.stripePaymentId, // For card payments
-    timestamp: new Date().toISOString(),      // When the order was completed
+   createdAt: new Date().toISOString(),      // When the order was completed
 
     // Overwritten in POSGrid using CustomerContext
     customerId: null,

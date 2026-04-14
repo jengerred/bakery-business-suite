@@ -48,7 +48,7 @@ export default function ManagerDashboard() {
       {/* 💳 Cash vs Card breakdown */}
       <PaymentBreakdown cashSales={cashSales} cardSales={cardSales} />
 
-      {/* 🧾 Last 5 orders of the day */}
+      {/* 🧾 Recent Orders (full audit log) */}
       <RecentOrders todayOrders={todayOrders} />
     </div>
   );

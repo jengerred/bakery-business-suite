@@ -70,7 +70,7 @@ export default function ReceiptModal({ order, receiptMethod, onClose }: ReceiptM
         <div className="text-[10px] mb-6 space-y-1">
           {/* FIXED: Defensive ID slicing */}
           <p>ID: {order?.id ? order.id.slice(0, 8).toUpperCase() : "POS-ORDER"}</p>
-          <p>{order.timestamp ? new Date(order.timestamp).toLocaleString() : new Date().toLocaleString()}</p>
+          <p>{order.createdAt ? new Date(order.createdAt).toLocaleString() : new Date().toLocaleString()}</p>
         </div>
 
         {/* Items Table */}

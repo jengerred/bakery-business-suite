@@ -25,13 +25,14 @@ export function useTodayOrders() {
   ------------------------------------------------------- */
   const today = new Date();
   const todayOrders: CompletedOrder[] = orderHistory.filter((order) => {
-    const date = new Date(order.timestamp);
-    return (
-      date.getDate() === today.getDate() &&
-      date.getMonth() === today.getMonth() &&
-      date.getFullYear() === today.getFullYear()
-    );
-  });
+  const date = new Date(order.createdAt);
+  return (
+    date.getDate() === today.getDate() &&
+    date.getMonth() === today.getMonth() &&
+    date.getFullYear() === today.getFullYear()
+  );
+});
+
 
   /* -------------------------------------------------------
      💵 Sales Metrics

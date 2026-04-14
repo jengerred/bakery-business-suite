@@ -1,13 +1,11 @@
 "use client";
 
-import type { CompletedOrder } from "../../pos/context/OrderHistoryContext";
+import type { ManagerOrder } from "./types";
 
-export default function RecentOrders({ todayOrders }: { todayOrders: CompletedOrder[] }) {
-  // Sort newest first - added created_at as a fallback
-  const sortedOrders = [...todayOrders].sort((a: any, b: any) => {
-    const timeA = new Date(a.created_at || a.timestamp || a.Timestamp).getTime();
-    const timeB = new Date(b.created_at || b.timestamp || b.Timestamp).getTime();
-    return timeB - timeA;
+export default function RecentOrders({ todayOrders }: { todayOrders: ManagerOrder[] }) {
+  
+  const sortedOrders = [...todayOrders].sort((a, b) => {
+    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
   });
 
   return (
@@ -27,64 +25,100 @@ export default function RecentOrders({ todayOrders }: { todayOrders: CompletedOr
               <th className="p-2 text-right">23: Grand Total</th>
             </tr>
           </thead>
+
           <tbody className="divide-y divide-gray-200 font-medium">
-            {sortedOrders.map((o: any) => (
-              <tr key={o.id || o.Id} className="hover:bg-blue-50/50 transition-colors divide-x">
+            {sortedOrders.map((o) => (
+              <tr key={o.id} className="hover:bg-blue-50/50 transition-colors divide-x">
+                
                 {/* 1-2: ID & Timestamp */}
                 <td className="p-2 align-top">
                   <div className="font-bold">
-                    {new Date(o.created_at || o.timestamp || o.Timestamp).toLocaleString()}
+                    {new Date(o.createdAt).toLocaleString()}
                   </div>
-                  <div className="text-[9px] text-gray-400 font-mono">{(o.id || o.Id)?.slice(0, 18)}...</div>
+                  <div className="text-[9px] text-gray-400 font-mono">{o.id.slice(0, 18)}...</div>
                 </td>
 
                 {/* 3-6: Customer Data */}
                 <td className="p-2 align-top bg-gray-50/30">
-                  <div className="text-gray-900 font-bold">{o.customerName || o.CustomerName || "GUEST"}</div>
-                  <div>{o.customerEmail || o.CustomerEmail || "No Email"}</div>
-                  <div>{o.customerPhone || o.CustomerPhone || "No Phone"}</div>
-                  <div className="text-gray-400">UID: {o.customerId || o.CustomerId || "None"}</div>
+                  <div className="text-gray-900 font-bold">{o.customerName || "GUEST"}</div>
+                  <div>{o.customerEmail || "No Email"}</div>
+                  <div>{o.customerPhone || "No Phone"}</div>
+                  <div className="text-gray-400">UID: {o.customerId || "None"}</div>
                 </td>
 
-                {/* 7-9: Fulfillment & Pickup */}
+              {/* 7-9: Fulfillment */}
                 <td className="p-2 align-top">
-                  <div className="text-blue-600 font-black uppercase">{o.fulfillmentType || o.FulfillmentType}</div>
-                  <div className="text-orange-600 font-bold">
-                    {o.pickupTime || o.PickupTime ? `PICKUP: ${o.pickupTime || o.PickupTime}` : "IMMEDIATE"}
+
+                  {/* Friendly Fulfillment Label */}
+                  <div className="text-blue-600 font-black uppercase">
+                    {{
+                      POS: "POS: IN PERSON ORDER",
+                      shipping: "ONLINE: SHIPPING ORDER",
+                      pickup: "ONLINE: PICKUP ORDER",
+                      delivery: "ONLINE: COURIER DELIVERY ORDER",
+                    }[o.fulfillmentType] || "UNKNOWN"}
                   </div>
-                  <div className="italic text-gray-500 mt-1">"{o.notes || o.Notes || ""}"</div>
+
+                  {/* Status Line */}
+                  <div className="text-orange-600 font-bold mt-1">
+                    {o.fulfillmentType === "POS" && (
+                      <>
+                        IMMEDIATE
+                        <div className="text-[9px] text-gray-500">
+                          {new Date(o.createdAt).toLocaleString()}
+                        </div>
+                      </>
+                    )}
+
+
+                    {o.fulfillmentType === "pickup" &&
+                      (o.pickupTime
+                        ? `PICKED UP: ${new Date(o.pickupTime).toLocaleString()}`
+                        : "NOT YET PICKED UP")}
+
+                    {o.fulfillmentType === "shipping" && "NOT YET SHIPPED"}
+
+                    {o.fulfillmentType === "delivery" && "NOT YET DELIVERED"}
+                  </div>
+
+                  {/* Notes */}
+                  <div className="italic text-gray-500 mt-1">
+                    {o.notes ? `"${o.notes}"` : ""}
+                  </div>
+
                 </td>
 
                 {/* 10-14: Address */}
                 <td className="p-2 align-top bg-gray-50/30">
-                  <div>{o.address || o.Address || "In-Store"}</div>
-                  <div>{o.city || o.City}, {o.state || o.State} {o.zip || o.Zip}</div>
+                  <div>{o.address || "In-Store"}</div>
+                  <div>{o.city}, {o.state} {o.zip}</div>
                 </td>
 
-                {/* 15-18: Payment Logic */}
+                {/* 15-18: Payment */}
                 <td className="p-2 align-top">
-                  <div className="font-bold uppercase text-purple-700">{o.paymentType || o.PaymentType}</div>
-                  <div className="text-[9px]">Method: {o.cardEntryMethod || o.CardEntryMethod || "N/A"}</div>
-                  <div className="text-[8px] text-gray-400 truncate w-32">Stripe: {o.stripePaymentId || o.StripePaymentId || "None"}</div>
+                  <div className="font-bold uppercase text-purple-700">{o.paymentType}</div>
+                  <div className="text-[9px]">Method: {o.cardEntryMethod || "N/A"}</div>
+                  <div className="text-[8px] text-gray-400 truncate w-32">Stripe: {o.stripePaymentId || "None"}</div>
                 </td>
 
                 {/* 19-22: Accounting */}
                 <td className="p-2 align-top bg-gray-50/30 text-right">
-                  <div>Sub: ${(o.subtotal || o.Subtotal || 0).toFixed(2)}</div>
-                  <div>Tax: ${(o.tax || o.Tax || 0).toFixed(2)}</div>
-                  <div className="text-green-600">Tender: ${(o.cashTendered || o.CashTendered || 0).toFixed(2)}</div>
-                  <div className="text-red-500">Change: ${(o.changeGiven || o.ChangeGiven || 0).toFixed(2)}</div>
+                  <div>Sub: ${o.subtotal.toFixed(2)}</div>
+                  <div>Tax: ${o.tax.toFixed(2)}</div>
+                  <div className="text-green-600">Tender: ${(o.cashTendered || 0).toFixed(2)}</div>
+                  <div className="text-red-500">Change: ${(o.changeGiven || 0).toFixed(2)}</div>
                 </td>
 
                 {/* 23: Total & Status */}
                 <td className="p-2 align-top text-right">
-                  <div className="text-sm font-black text-gray-900">${(o.total || o.Total || 0).toFixed(2)}</div>
+                  <div className="text-sm font-black text-gray-900">${o.total.toFixed(2)}</div>
                   <span className={`text-[9px] font-bold px-1 rounded uppercase ${
-                    (o.status || o.Status) === 'paid' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
+                    o.status === 'paid' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
                   }`}>
-                    {o.status || o.Status}
+                    {o.status}
                   </span>
                 </td>
+
               </tr>
             ))}
           </tbody>

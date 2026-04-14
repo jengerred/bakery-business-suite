@@ -50,7 +50,13 @@ export default function CartDrawer({
     customerId: "",
 
     // ⭐ Correct fulfillment type
-    fulfillmentType: method === "shipping" ? "delivery" : "pickup",
+    fulfillmentType:
+    method === "shipping"
+    ? "shipping"
+    : method === "pickup"
+    ? "pickup"
+    : "delivery",
+
 
     // ⭐ Pickup time should be null until POS marks it picked up
     pickupTime: null,

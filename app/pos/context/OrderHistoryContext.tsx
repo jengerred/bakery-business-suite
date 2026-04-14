@@ -23,9 +23,8 @@ export type CompletedOrder = {
   changeGiven?: number;
   stripePaymentId?: string | null;
   
- // Use created_at to match Supabase convention
-  created_at?: string; 
-  timestamp: string;
+ // Use createdAt to match Supabase convention
+  createdAt: string; 
 
   pickupTime?: string;
 

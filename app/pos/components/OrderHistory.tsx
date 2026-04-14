@@ -57,8 +57,8 @@ export default function OrderHistory() {
             </p>
             
             <p className="text-sm text-gray-500">
-              {order.timestamp 
-                ? new Date(order.timestamp).toLocaleString() 
+              {order.createdAt 
+                ? new Date(order.createdAt).toLocaleString() 
                 : "Just now"}
             </p>
 
