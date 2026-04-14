@@ -37,4 +37,16 @@ export type ManagerOrder = {
 
   // ⭐ Canonical backend timestamp
   createdAt: string;
+
+   items: {
+    product: {
+      id: number;
+      name: string;
+      price: number;
+      description: string;
+      imageUrl: string;
+      sortOrder: number;
+    };
+    quantity: number;
+  }[];
 };
