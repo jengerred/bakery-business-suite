@@ -1,10 +1,10 @@
 "use client";
 
-/* -------------------------------------------------------
+/* --------------------------------------------------------
    📦 Manager Dashboard Components
    These are small, focused UI blocks that keep the page
    clean and maintainable.
-------------------------------------------------------- */
+-------------------------------------------------------- */
 import SummaryCards from "./components/SummaryCards";
 import PaymentBreakdown from "./components/PaymentBreakdown";
 import RecentOrders from "./components/RecentOrders";
