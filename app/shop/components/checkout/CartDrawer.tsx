@@ -34,45 +34,52 @@ export default function CartDrawer({
     setIsSubmitting(true);
 
     // 1. Construct the data object exactly as C# expects it
-    const orderData = {
-      Items: cart.map((item: any) => ({
-        Product: item.product,
-        Quantity: item.quantity
-      })),
-      Subtotal: subtotal,
-      Tax: 0, 
-      Total: finalTotal,
-      CustomerName: formData.name,
-      CustomerEmail: formData.email,
-      CustomerPhone: formData.phone,
-      CustomerId: "", 
-      FulfillmentType: method === "shipping" ? "Delivery" : "Pickup",
+   const orderData = {
+    items: cart.map((item: any) => ({
+      product: item.product,
+      quantity: item.quantity
+    })),
 
-      // ✅ FIX: PickupTime must be a valid ISO string for the C# DateTime parser
-      PickupTime: new Date().toISOString(), 
+    subtotal,
+    tax: 0,
+    total: finalTotal,
 
-      Status: "paid",
-      Address: formData.address || "In-Store",
-      City: formData.city || "Grand Rapids",
-      State: "MI", 
-      Zip: formData.zip || "",
+    customerName: formData.name,
+    customerEmail: formData.email,
+    customerPhone: formData.phone,
+    customerId: "",
 
-      // ✅ FIX: Move "Friday @ 12:00 PM" to Notes so it doesn't crash the Date column
-      Notes: method === "pickup" ? "Friday @ 12:00 PM" : "Online Order",
+    // ⭐ Correct fulfillment type
+    fulfillmentType: method === "shipping" ? "delivery" : "pickup",
 
-      PaymentType: paymentType === "card" ? "Card" : "Cash",
-      CardEntryMethod: paymentType === "card" ? "online" : "none",
-      StripePaymentId: stripeId || "",
-      CashTendered: 0, 
-      ChangeGiven: 0   
-    };
+    // ⭐ Pickup time should be null until POS marks it picked up
+    pickupTime: null,
+
+    // ⭐ Correct status logic
+    status: paymentType === "card" ? "paid" : "pending_payment",
+
+    // ⭐ Address fields
+    address: method === "shipping" ? formData.address : null,
+    city: method === "shipping" ? formData.city : null,
+    state: method === "shipping" ? "MI" : null,
+    zip: method === "shipping" ? formData.zip : null,
+
+    // ⭐ Notes
+    notes: method === "pickup" ? "Pickup order" : "Online shipping order",
+
+    // ⭐ Payment fields
+    paymentType: paymentType === "card" ? "card" : "pickup",
+    cardEntryMethod: paymentType === "card" ? "online" : "none",
+    stripePaymentId: stripeId || "",
+    cashTendered: 0,
+    changeGiven: 0
+  };
 
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/orders`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        // ✅ FIX: Wrapped in 'dto' key to satisfy [FromBody] OrderDto dto
-        body: JSON.stringify({ dto: orderData }),
+        body: JSON.stringify(orderData),
       });
 
       if (res.ok) {

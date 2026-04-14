@@ -227,56 +227,67 @@ export default function POSGrid({
               setShowCheckout(false);
               window.dispatchEvent(new CustomEvent("cashier-cancel-checkout"));
             }}
-            onComplete={(paymentData) => {
-              // Safety check before running calculateTotals logic
-              if (!order || order.length === 0) return;
+           onComplete={async (paymentData) => {
+          if (!order || order.length === 0) return;
 
-              const { subtotal, tax, total: finalTotal } = calculateTotals(order);
-              const customerData = customer as any;
+          const { subtotal, tax, total: finalTotal } = calculateTotals(order);
+          const customerData = customer as any;
 
-              const completedPayload = {
-                Items: order.map((item) => ({
-                  Product: item.product,
-                  Quantity: item.quantity,
-                })),
-                Subtotal: subtotal,
-                Tax: tax,
-                Total: finalTotal,
-                PaymentType: paymentData.paymentType,
-                CardEntryMethod: paymentData.cardEntryMethod || "none",
-                CashTendered: paymentData.cashTendered || 0,
-                ChangeGiven: paymentData.changeGiven || 0,
-                StripePaymentId: paymentData.stripePaymentId || "",
-                Timestamp: new Date().toISOString(), 
-                CustomerId: customer?.id || "",
-                CustomerName: customer?.name || "Guest",
-                CustomerEmail: customer?.email || "",
-                CustomerPhone: customer?.phone || "",
-                Status: "paid",
-                FulfillmentType: "POS",
-                PickupTime: new Date().toISOString(), 
-                Address: customerData?.address || "",
-                City: customerData?.city || "",
-                State: customerData?.state || "MI",
-                Zip: customerData?.zip || "",
-                Notes: paymentData.notes || "",
-              };
+          const completedPayload = {
+            items: order.map((item) => ({
+              product: item.product,
+              quantity: item.quantity,
+            })),
+            subtotal,
+            tax,
+            total: finalTotal,
+            paymentType: paymentData.paymentType,
+            cardEntryMethod: paymentData.cardEntryMethod || "none",
+            cashTendered: paymentData.cashTendered || 0,
+            changeGiven: paymentData.changeGiven || 0,
+            stripePaymentId: paymentData.stripePaymentId || "",
+            createdAt: new Date().toISOString(),
+            customerId: customer?.id || "",
+            customerName: customer?.name || "Guest",
+            customerEmail: customer?.email || "",
+            customerPhone: customer?.phone || "",
+            status: "paid",
+            fulfillmentType: "POS",
+            pickupTime: new Date().toISOString(),
+            address: customerData?.address || "",
+            city: customerData?.city || "",
+            state: customerData?.state || "MI",
+            zip: customerData?.zip || "",
+            notes: paymentData.notes || "",
+          };
 
-              addOrder({ dto: completedPayload } as any);
+          // ⭐ Send to backend
+          const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/orders`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(completedPayload),
+          });
 
-              if (paymentData.paymentType === "cash" || !customer) {
-                setReceiptMethod("none");
-                window.dispatchEvent(new CustomEvent("reader-force-thank-you"));
-              } else {
-                setReceiptMethod(undefined);
-              }
+          const savedOrder = await res.json();
 
-              setLastOrder(completedPayload as any); 
-              setShowReceipt(true);
-              setOrder([]);
-              setShowCheckout(false);
-            }}
+          // ⭐ Use backend order for receipt
+          setLastOrder(savedOrder);
+
+          addOrder(savedOrder);
+
+          if (paymentData.paymentType === "cash" || !customer) {
+            setReceiptMethod("none");
+            window.dispatchEvent(new CustomEvent("reader-force-thank-you"));
+          } else {
+            setReceiptMethod(undefined);
+          }
+
+          setShowReceipt(true);
+          setOrder([]);
+          setShowCheckout(false);
+        }}
           />
+
         )}
         {showReceipt && lastOrder && (
           <div className="fixed top-0 left-0 h-full w-[420px] bg-white dark:bg-slate-900 shadow-2xl z-50 p-6 overflow-y-auto">
