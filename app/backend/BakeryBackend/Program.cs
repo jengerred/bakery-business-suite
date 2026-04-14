@@ -1,5 +1,6 @@
 using BakeryBackend.Data;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -7,69 +8,68 @@ var builder = WebApplication.CreateBuilder(args);
    SERVICE CONFIGURATION
    --------------------------------------------------------- */
 
-// ✅ FIXED: Replaced .NET 9 AddOpenApi() with .NET 8 Swagger
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// Register controllers + JSON camelCase formatting
+// Controllers
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
-        // Ensures JSON fields use camelCase (imageUrl, sortOrder, etc.)
         options.JsonSerializerOptions.PropertyNamingPolicy =
             System.Text.Json.JsonNamingPolicy.CamelCase;
     });
 
-// Register EF Core + PostgreSQL connection with dynamic JSON enabled
+/* ---------------------------------------------------------
+   FIXED: Build NpgsqlDataSource ONCE (correct for Npgsql 8.x)
+   --------------------------------------------------------- */
+
+var dataSourceBuilder = new NpgsqlDataSourceBuilder(
+    builder.Configuration.GetConnectionString("DefaultConnection")
+);
+
+// Enable dynamic JSON (your version supports this here)
+dataSourceBuilder.EnableDynamicJson();
+
+var dataSource = dataSourceBuilder.Build();
+
+// Register as singleton
+builder.Services.AddSingleton(dataSource);
+
+/* ---------------------------------------------------------
+   Register DbContext using the SINGLE shared data source
+   --------------------------------------------------------- */
+
 builder.Services.AddDbContext<BakeryContext>(options =>
 {
-    var dataSourceBuilder = new Npgsql.NpgsqlDataSourceBuilder(
-        builder.Configuration.GetConnectionString("DefaultConnection")
-    );
-
-    // ⭐ REQUIRED for JSONB serialization of List<OrderItem>
-    dataSourceBuilder.EnableDynamicJson();
-
-    var dataSource = dataSourceBuilder.Build();
-
     options.UseNpgsql(dataSource);
 });
 
-// ---------------------------------------------------------
-// CORS POLICY (Allows frontend apps to call this API)
-// ---------------------------------------------------------
+/* ---------------------------------------------------------
+   CORS
+   --------------------------------------------------------- */
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
     {
-        policy
-            .AllowAnyOrigin()   // Allow any domain
-            .AllowAnyMethod()   // GET, POST, PUT, DELETE
-            .AllowAnyHeader();  // Custom headers
+        policy.AllowAnyOrigin()
+              .AllowAnyMethod()
+              .AllowAnyHeader();
     });
 });
 
 var app = builder.Build();
 
 /* ---------------------------------------------------------
-   MIDDLEWARE PIPELINE
+   MIDDLEWARE
    --------------------------------------------------------- */
 
-// ✅ FIXED: Replaced .NET 9 MapOpenApi() with .NET 8 Swagger UI
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
-// Redirect HTTP → HTTPS (Note: If Railway 500s, try commenting this out)
 app.UseHttpsRedirection();
-
-// Apply CORS before routing
 app.UseCors("AllowAll");
-
-// Map controller endpoints (e.g., /api/products)
 app.MapControllers();
-
-// Start the application
 app.Run();

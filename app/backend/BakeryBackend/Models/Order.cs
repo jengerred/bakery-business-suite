@@ -37,7 +37,8 @@ namespace BakeryBackend.Models
         public string? StripePaymentId { get; set; }
 
         [Column("created_at")]
-        public DateTime Timestamp { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
 
         [Column("customer_id")]
         public string? CustomerId { get; set; }

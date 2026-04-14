@@ -51,8 +51,7 @@ namespace BakeryBackend.Controllers
 
                 StripePaymentId = order.StripePaymentId,
 
-                // Make sure your DTO provides a DateTime for Timestamp
-                Timestamp = order.Timestamp != default ? order.Timestamp : DateTime.UtcNow,
+               CreatedAt = DateTime.UtcNow,
 
                 CustomerId = order.CustomerId,
                 CustomerName = order.CustomerName,
@@ -83,7 +82,7 @@ namespace BakeryBackend.Controllers
         public async Task<IActionResult> GetAllOrders()
         {
             var orders = await _db.Orders
-                .OrderByDescending(o => o.Timestamp)
+                .OrderByDescending(o => o.CreatedAt)
                 .ToListAsync();
 
             return Ok(orders);

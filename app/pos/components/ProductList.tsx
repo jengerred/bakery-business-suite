@@ -26,14 +26,17 @@ export default function ProductList({ onAdd }: ProductListProps) {
   /* -----------------------------
      Fetch products from backend
      ----------------------------- */
-  useEffect(() => {
-    async function loadProducts() {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/products`);
-      const data = await res.json();
-      setProducts(data);
-    }
-    loadProducts();
-  }, []);
+ useEffect(() => {
+  async function loadProducts() {
+    console.log("API URL:", process.env.NEXT_PUBLIC_API_URL);
+
+    const res = await fetch("https://bakery-backend-production-6b0b.up.railway.app/api/products");
+    const data = await res.json();
+    setProducts(data);
+  }
+  loadProducts();
+}, []);
+
 
   /* -----------------------------
      Loading state

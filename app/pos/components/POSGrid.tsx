@@ -21,7 +21,7 @@ import { useCustomer } from "../context/CustomerContext";
 import type { CompletedOrder } from "../context/OrderHistoryContext";
 import { calculateTotals } from "../lib/calcTotals";
 
-/* ⭐ Updated to use real backend Product type */
+
 import type { Product } from "@/app/types/product";
 
 type Props = {
@@ -254,17 +254,14 @@ export default function POSGrid({
                 CustomerPhone: customer?.phone || "",
                 Status: "paid",
                 FulfillmentType: "POS",
-                // ✅ FIX: Must be ISO string for C# DateTime column
                 PickupTime: new Date().toISOString(), 
                 Address: customerData?.address || "",
                 City: customerData?.city || "",
                 State: customerData?.state || "MI",
                 Zip: customerData?.zip || "",
-                // ✅ FIX: Notes can store the raw display text if needed
                 Notes: paymentData.notes || "",
               };
 
-              // ✅ FIX: Wrap in 'dto' key to match backend OrderDto parameter
               addOrder({ dto: completedPayload } as any);
 
               if (paymentData.paymentType === "cash" || !customer) {
