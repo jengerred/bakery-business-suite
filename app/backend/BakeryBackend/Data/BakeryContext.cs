@@ -14,6 +14,8 @@ namespace BakeryBackend.Data
         public DbSet<Product> Products { get; set; }
         public DbSet<Order> Orders { get; set; }
 
+        public DbSet<Profile> Profiles { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -87,6 +89,21 @@ namespace BakeryBackend.Data
                 entity.Property(p => p.Description).HasColumnName("Description");
                 entity.Property(p => p.ImageUrl).HasColumnName("image_url");
                 entity.Property(p => p.SortOrder).HasColumnName("sort_order");
+            });
+
+            /* -------------------------------------------------
+            PROFILE ENTITY MAPPING 
+            ------------------------------------------------- */
+            modelBuilder.Entity<Profile>(entity =>
+            {
+                entity.ToTable("Profiles"); // Matches Supabase casing
+
+                entity.HasKey(p => p.Id);
+                entity.Property(p => p.Id).HasColumnName("id");
+                entity.Property(p => p.Email).HasColumnName("email");
+                entity.Property(p => p.Name).HasColumnName("name");
+                entity.Property(p => p.Phone).HasColumnName("phone");
+                entity.Property(p => p.LoyaltyPoints).HasColumnName("loyalty_points");
             });
         }
     }
