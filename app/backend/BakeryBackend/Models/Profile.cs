@@ -20,5 +20,15 @@ namespace BakeryBackend.Models
         
         [Column("loyalty_points")]
         public int LoyaltyPoints { get; set; }
+
+        [Column("address")]
+        public string? Address { get; set; }
+
+        [Column("city")]
+        public string? City { get; set; }
+        
+        [Column("zip")]
+        public string? Zip { get; set; }
+
     }
 }
