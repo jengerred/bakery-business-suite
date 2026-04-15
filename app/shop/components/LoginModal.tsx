@@ -26,32 +26,46 @@ export default function LoginModal({ isOpen, onClose }: { isOpen: boolean; onClo
     onClose();
   };
 
+  /* -------------------------------------------------------
+     🔍 Step 1: Find Existing Profile
+     Normalizes input to lowercase so 'Jennifer@Aol.com' 
+     matches 'jengerred@aol.com' in the database.
+  ------------------------------------------------------- */
   const handleStepOne = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError("");
     
-    const existing = await userService.find(input.trim());
+    // Normalize: Trim whitespace and force to lowercase
+    const normalizedInput = input.trim().toLowerCase();
+    
+    const existing = await userService.find(normalizedInput);
     
     if (existing) {
       setUser(existing);
       handleClose();
     } else {
-      setIsNewUser(true); // User not in Profiles table, trigger sign-up
+      setIsNewUser(true); // Trigger sign-up flow
     }
     setLoading(false);
   };
 
+  /* -------------------------------------------------------
+     ➕ Step 2: Create New Profile
+     Ensures the new email is stored in lowercase.
+  ------------------------------------------------------- */
   const handleCreateAccount = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     
     try {
-      const isEmail = input.includes("@");
+      const normalizedInput = input.trim().toLowerCase();
+      const isEmail = normalizedInput.includes("@");
+
       const newUser = await userService.create({
         name: name || "New Member",
-        email: isEmail ? input.trim() : undefined,
-        phone: !isEmail ? input.trim() : undefined,
+        email: isEmail ? normalizedInput : undefined,
+        phone: !isEmail ? normalizedInput.replace(/\D/g, "") : undefined,
       });
 
       setUser(newUser);
@@ -67,7 +81,6 @@ export default function LoginModal({ isOpen, onClose }: { isOpen: boolean; onClo
     <div className="fixed inset-0 bg-stone-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-3xl w-full max-w-sm p-8 shadow-2xl border border-stone-100 relative">
         
-        {/* ⬅️ Back Button: Only shows on the Name entry screen */}
         {isNewUser && (
           <button 
             onClick={handleBack}
@@ -102,7 +115,7 @@ export default function LoginModal({ isOpen, onClose }: { isOpen: boolean; onClo
           <input
             type="text"
             placeholder="Email or Phone"
-            disabled={isNewUser} // Keeps the identifier locked so they don't change it midway
+            disabled={isNewUser}
             className="w-full p-4 bg-stone-50 border border-stone-200 rounded-2xl outline-none focus:border-violet-500 transition-all font-bold disabled:opacity-50"
             value={input}
             onChange={(e) => setInput(e.target.value)}

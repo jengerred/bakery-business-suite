@@ -6,7 +6,7 @@ import { Elements } from "@stripe/react-stripe-js";
 import OrderSummary from "./OrderSummary";
 import PaymentSection from "./PaymentSection";
 import { userService } from "../../lib/userService";
-import LoginModal from "../LoginModal"; // Ensure path matches your project
+import LoginModal from "../LoginModal"; 
 
 /* -------------------------------------------------------
    👤 User Context
@@ -35,12 +35,10 @@ export default function CartDrawer({
   const [formData, setFormData] = useState({ name: "", email: "", phone: "", address: "", city: "", zip: "" });
   const [showErrors, setShowErrors] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isLoginOpen, setIsLoginOpen] = useState(false); // Controls the "Join Rewards" trigger
+  const [isLoginOpen, setIsLoginOpen] = useState(false); 
 
   /* -------------------------------------------------------
      ✨ Auto-Fill Logic
-     When a user logs in, we pull their saved profile data 
-     (including the new Address fields) into the form.
   ------------------------------------------------------- */
   useEffect(() => {
     if (user) {
@@ -65,8 +63,6 @@ export default function CartDrawer({
 
   /* -------------------------------------------------------
      👤 Login Trigger Logic
-     Instead of a Nav button, we trigger login when they 
-     select a fulfillment method.
   ------------------------------------------------------- */
   const handleSelectMethod = (selected: "pickup" | "shipping") => {
     setMethod(selected);
@@ -79,22 +75,23 @@ export default function CartDrawer({
 
   /* -------------------------------------------------------
      🚀 Order Submission & Profile Sync
-     - Syncs the latest Name, Phone, and Address to the Profile.
-     - Submits the order to the C# Backend.
+     - Normalizes email to lowercase for case-insensitivity.
+     - Strips non-digits from phone numbers.
   ------------------------------------------------------- */
   const handleSubmitOrder = async (paymentType: "card" | "cash", stripeId?: string) => { 
     setIsSubmitting(true);
 
-    // 👤 1. Sync Profile Data (Now includes Address/City/Zip)
+    // Normalize data for consistency
+    const cleanEmail = formData.email.trim().toLowerCase();
+    const cleanPhone = formData.phone.replace(/\D/g, "");
+
+    // 👤 1. Sync Profile Data
     if (user && user.id) {
       try {
         const updatedUser = await userService.update(user.id, {
-          name: formData.name,
-          email: formData.email,
-          phone: formData.phone,
-          address: formData.address,
-          city: formData.city,
-          zip: formData.zip
+          ...formData,
+          email: cleanEmail,
+          phone: cleanPhone
         });
         setUser(updatedUser);
       } catch (err) {
@@ -112,8 +109,8 @@ export default function CartDrawer({
       tax: 0,
       total: finalTotal,
       customerName: formData.name,
-      customerEmail: formData.email,
-      customerPhone: formData.phone,
+      customerEmail: cleanEmail,
+      customerPhone: cleanPhone,
       customerId: user?.id || "", 
       fulfillmentType: method === "shipping" ? "shipping" : "pickup",
       pickupTime: null,
@@ -130,7 +127,6 @@ export default function CartDrawer({
       changeGiven: 0
     };
 
-    // 🚀 3. Send to Railway
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/orders`, {
         method: "POST",
@@ -152,8 +148,45 @@ export default function CartDrawer({
   };
   
   /* -------------------------------------------------------
-     Navigation & Validation
+     Navigation & Validation Logic
   ------------------------------------------------------- */
+  const isFormValid = () => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const phoneDigits = formData.phone.replace(/\D/g, "");
+    
+    const isNameValid = formData.name.trim().length >= 2;
+    const isEmailValid = emailRegex.test(formData.email);
+    const isPhoneValid = phoneDigits.length === 10;
+
+    const baseFields = isNameValid && isEmailValid && isPhoneValid;
+
+    if (method === "shipping") {
+      const isZipValid = /^\d{5}$/.test(formData.zip);
+      return baseFields && formData.address.trim() !== "" && formData.city.trim() !== "" && isZipValid;
+    }
+    return baseFields;
+  };
+
+  // Determines if a specific field should show as "Invalid" (Red)
+  const isFieldInvalid = (fieldName: string, value: string) => {
+    if (!showErrors) return false;
+    if (value.trim() === "") return true;
+
+    if (fieldName === "email") return !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+    if (fieldName === "phone") return value.replace(/\D/g, "").length !== 10;
+    if (fieldName === "zip") return !/^\d{5}$/.test(value);
+    
+    return false;
+  };
+
+  const inputClass = (fieldName: string, value: string) => `
+    w-full p-4 bg-stone-50 rounded-xl border-2 font-bold text-sm transition-all outline-none
+    ${isFieldInvalid(fieldName, value)
+        ? "border-red-400 bg-red-50 animate-shake" 
+        : "border-transparent focus:border-violet-100 focus:bg-white"
+    }
+  `;
+
   const handleAction = (nextView: "payment" | "success") => {
     if (isFormValid()) {
       if (nextView === "success") {
@@ -166,22 +199,6 @@ export default function CartDrawer({
       setShowErrors(true);
     }
   };
-
-  const isFormValid = () => {
-    const baseFields = formData.name.trim() !== "" && formData.email.trim() !== "" && formData.phone.trim() !== "";
-    if (method === "shipping") {
-      return baseFields && formData.address.trim() !== "" && formData.city.trim() !== "" && formData.zip.trim() !== "";
-    }
-    return baseFields;
-  };
-
-  const inputClass = (value: string) => `
-    w-full p-4 bg-stone-50 rounded-xl border-2 font-bold text-sm transition-all outline-none
-    ${showErrors && value.trim() === "" 
-        ? "border-red-400 bg-red-50 animate-shake" 
-        : "border-transparent focus:border-violet-100 focus:bg-white"
-    }
-  `;
 
   if (!isOpen) return null;
 
@@ -231,7 +248,7 @@ export default function CartDrawer({
         {/* SCROLLABLE CONTENT AREA */}
         <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
           
-          {/* VIEW: METHODS (Choose Pickup vs Shipping) */}
+          {/* VIEW: METHODS */}
           {view === "methods" && (
             <div className="p-1">
               <OrderSummary cart={cart} method={null} subtotal={subtotal} finalTotal={subtotal} onIncrement={onIncrement} onDecrement={onDecrement} onUpdateQuantity={onUpdateQuantity} onRemove={onRemove} />
@@ -263,24 +280,24 @@ export default function CartDrawer({
             </div>
           )}
 
-          {/* VIEW: DETAILS (Contact & Address Form) */}
+          {/* VIEW: DETAILS */}
           {view === "details" && (
             <div className="space-y-3">
               <div className="mb-8 p-5 rounded-3xl border-2 border-violet-300/50 border-dashed bg-violet-100 shadow-inner space-y-3">
                 <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-violet-600">
                   {method === "shipping" ? "Shipping Details" : "Pickup Details"}
                 </h3>
-                <input value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} className={inputClass(formData.name)} placeholder="Full Name" />
+                <input value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} className={inputClass("name", formData.name)} placeholder="Full Name" />
                 <div className="grid grid-cols-2 gap-3">
-                  <input value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})} className={inputClass(formData.phone)} placeholder="Phone" />
-                  <input value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} className={inputClass(formData.email)} placeholder="Email" />
+                  <input value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})} className={inputClass("phone", formData.phone)} placeholder="Phone" />
+                  <input value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} className={inputClass("email", formData.email)} placeholder="Email" />
                 </div>
                 {method === "shipping" && (
                   <div className="space-y-3 animate-in fade-in slide-in-from-top-2">
-                    <input value={formData.address} onChange={(e) => setFormData({...formData, address: e.target.value})} className={inputClass(formData.address)} placeholder="Shipping Address" />
+                    <input value={formData.address} onChange={(e) => setFormData({...formData, address: e.target.value})} className={inputClass("address", formData.address)} placeholder="Shipping Address" />
                     <div className="grid grid-cols-2 gap-3">
-                      <input value={formData.city} onChange={(e) => setFormData({...formData, city: e.target.value})} className={inputClass(formData.city)} placeholder="City" />
-                      <input value={formData.zip} onChange={(e) => setFormData({...formData, zip: e.target.value})} className={inputClass(formData.zip)} placeholder="Zip Code" />
+                      <input value={formData.city} onChange={(e) => setFormData({...formData, city: e.target.value})} className={inputClass("city", formData.city)} placeholder="City" />
+                      <input value={formData.zip} onChange={(e) => setFormData({...formData, zip: e.target.value})} className={inputClass("zip", formData.zip)} placeholder="Zip Code" />
                     </div>
                   </div>
                 )}
@@ -309,7 +326,7 @@ export default function CartDrawer({
             </div>
           )}
 
-          {/* VIEW: PAYMENT (Stripe Elements) */}
+          {/* VIEW: PAYMENT */}
           {view === "payment" && (
             <Elements stripe={stripePromise} options={{ 
                 mode: 'payment', 
@@ -332,7 +349,7 @@ export default function CartDrawer({
             </Elements>
           )}
 
-          {/* VIEW: SUCCESS (Confirmation Screen) */}
+          {/* VIEW: SUCCESS */}
           {view === "success" && (
             <div className="text-center space-y-6 py-12 animate-in fade-in zoom-in duration-500">
               <div className="relative inline-block">
@@ -350,12 +367,11 @@ export default function CartDrawer({
         </div>
       </div>
 
-      {/* 👤 REWARDS MODAL TRIGGER */}
       <LoginModal 
         isOpen={isLoginOpen} 
         onClose={() => {
           setIsLoginOpen(false);
-          setView("details"); // Go to details whether they logged in or closed as guest
+          setView("details"); 
         }} 
       />
     </div>
