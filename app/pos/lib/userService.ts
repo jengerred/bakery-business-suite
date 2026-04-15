@@ -29,7 +29,7 @@ export const userService = {
   ------------------------------------------------------- */
   async find(value: string): Promise<User | null> {
     try {
-      const res = await fetch(`${API}/api/users/find?value=${encodeURIComponent(value)}`);
+      const res = await fetch(`${API}/api/profiles/find?value=${encodeURIComponent(value)}`);
       
       if (!res.ok) return null;
       
@@ -52,7 +52,7 @@ export const userService = {
     phone?: string;
     email?: string;
   }): Promise<User> {
-    const res = await fetch(`${API}/api/users`, {
+    const res = await fetch(`${API}/api/profiles`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
@@ -75,7 +75,7 @@ export const userService = {
     ------------------------------------------------------- */
       async all(): Promise<User[]> {
         try {
-          const res = await fetch(`${API}/api/users`);
+          const res = await fetch(`${API}/api/profiles`);
           if (!res.ok) return [];
           return await res.json();
         } catch (err) {
