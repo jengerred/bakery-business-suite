@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using BakeryBackend.Data;
 using BakeryBackend.Models;
+using BakeryBackend.Dtos;
+
 
 namespace BakeryBackend.Controllers
 {
@@ -36,22 +38,31 @@ namespace BakeryBackend.Controllers
         }
 
         // ➕ POST /api/profiles
-        [HttpPost]
+       [HttpPost]
         public async Task<IActionResult> CreateProfile([FromBody] UserDto dto)
         {
-            var newProfile = new Profile
+            try 
             {
-                Id = Guid.NewGuid(),
-                Name = dto.Name ?? "New Customer",
-                Phone = dto.Phone,
-                Email = dto.Email,
-                LoyaltyPoints = 0
-            };
+                var newProfile = new Profile
+                {
+                    Id = Guid.NewGuid(),
+                    Name = dto.Name ?? "New Customer",
+                    Phone = dto.Phone,
+                    Email = dto.Email,
+                    LoyaltyPoints = 0
+                };
 
-            _db.Profiles.Add(newProfile);
-            await _db.SaveChangesAsync();
+                _db.Profiles.Add(newProfile);
+                await _db.SaveChangesAsync();
 
-            return Ok(newProfile);
+                return Ok(newProfile);
+            }
+            catch (Exception ex)
+            {
+                // This will send the exact database crash message back to your frontend/logs
+                var errorMessage = ex.InnerException != null ? ex.InnerException.Message : ex.Message;
+                return StatusCode(500, new { Error = "Database crash", Details = errorMessage });
+            }
         }
     }
 }
