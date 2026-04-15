@@ -1,10 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { loadStripe } from "@stripe/stripe-js";
 import { Elements } from "@stripe/react-stripe-js";
 import OrderSummary from "./OrderSummary";
 import PaymentSection from "./PaymentSection";
+import { userService } from "../../lib/userService";
+import LoginModal from "../LoginModal"; // Ensure path matches your project
+
+/* -------------------------------------------------------
+   👤 User Context
+   Used to trigger login and auto-fill profile details.
+------------------------------------------------------- */
+import { useUser } from "../../context/UserContext";
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
 
@@ -17,70 +25,112 @@ export default function CartDrawer({
   onUpdateQuantity, 
   onRemove,
 }: any) {
+  
+  /* -------------------------------------------------------
+     State & Context Hooks
+  ------------------------------------------------------- */
+  const { user, setUser } = useUser();
   const [view, setView] = useState<"methods" | "details" | "payment" | "success">("methods");
   const [method, setMethod] = useState<"pickup" | "shipping">("pickup");
   const [formData, setFormData] = useState({ name: "", email: "", phone: "", address: "", city: "", zip: "" });
   const [showErrors, setShowErrors] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoginOpen, setIsLoginOpen] = useState(false); // Controls the "Join Rewards" trigger
 
+  /* -------------------------------------------------------
+     ✨ Auto-Fill Logic
+     When a user logs in, we pull their saved profile data 
+     (including the new Address fields) into the form.
+  ------------------------------------------------------- */
+  useEffect(() => {
+    if (user) {
+      setFormData(prev => ({
+        ...prev,
+        name: user.name || "",
+        email: user.email || "",
+        phone: user.phone || "",
+        address: user.address || "",
+        city: user.city || "",
+        zip: user.zip || ""
+      }));
+    }
+  }, [user]);
+
+  /* -------------------------------------------------------
+     Calculations
+  ------------------------------------------------------- */
   const subtotal = cart.reduce((acc: number, item: any) => acc + (item.product.price * item.quantity), 0);
   const shippingFee = method === "shipping" ? 12.00 : 0;
   const finalTotal = subtotal + shippingFee;
 
-  /* -----------------------------------------------------------
-     🚀 BACKEND INTEGRATION (23-Column Sync)
-  ----------------------------------------------------------- */
+  /* -------------------------------------------------------
+     👤 Login Trigger Logic
+     Instead of a Nav button, we trigger login when they 
+     select a fulfillment method.
+  ------------------------------------------------------- */
+  const handleSelectMethod = (selected: "pickup" | "shipping") => {
+    setMethod(selected);
+    if (!user) {
+      setIsLoginOpen(true);
+    } else {
+      setView("details");
+    }
+  };
+
+  /* -------------------------------------------------------
+     🚀 Order Submission & Profile Sync
+     - Syncs the latest Name, Phone, and Address to the Profile.
+     - Submits the order to the C# Backend.
+  ------------------------------------------------------- */
   const handleSubmitOrder = async (paymentType: "card" | "cash", stripeId?: string) => { 
     setIsSubmitting(true);
 
-    // 1. Construct the data object exactly as C# expects it
-   const orderData = {
-    items: cart.map((item: any) => ({
-      product: item.product,
-      quantity: item.quantity
-    })),
+    // 👤 1. Sync Profile Data (Now includes Address/City/Zip)
+    if (user && user.id) {
+      try {
+        const updatedUser = await userService.update(user.id, {
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          address: formData.address,
+          city: formData.city,
+          zip: formData.zip
+        });
+        setUser(updatedUser);
+      } catch (err) {
+        console.error("⚠️ Profile sync failed, but continuing with order...");
+      }
+    }
 
-    subtotal,
-    tax: 0,
-    total: finalTotal,
+    // 📦 2. Construct Order Payload
+    const orderData = {
+      items: cart.map((item: any) => ({
+        product: item.product,
+        quantity: item.quantity
+      })),
+      subtotal,
+      tax: 0,
+      total: finalTotal,
+      customerName: formData.name,
+      customerEmail: formData.email,
+      customerPhone: formData.phone,
+      customerId: user?.id || "", 
+      fulfillmentType: method === "shipping" ? "shipping" : "pickup",
+      pickupTime: null,
+      status: paymentType === "card" ? "paid" : "pending_payment",
+      address: method === "shipping" ? formData.address : null,
+      city: method === "shipping" ? formData.city : null,
+      state: "MI",
+      zip: method === "shipping" ? formData.zip : null,
+      notes: method === "pickup" ? "Pickup order" : "Online shipping order",
+      paymentType: paymentType === "card" ? "card" : "pickup",
+      cardEntryMethod: paymentType === "card" ? "online" : "none",
+      stripePaymentId: stripeId || "",
+      cashTendered: 0,
+      changeGiven: 0
+    };
 
-    customerName: formData.name,
-    customerEmail: formData.email,
-    customerPhone: formData.phone,
-    customerId: "",
-
-    // ⭐ Correct fulfillment type
-    fulfillmentType:
-    method === "shipping"
-    ? "shipping"
-    : method === "pickup"
-    ? "pickup"
-    : "delivery",
-
-
-    // ⭐ Pickup time should be null until POS marks it picked up
-    pickupTime: null,
-
-    // ⭐ Correct status logic
-    status: paymentType === "card" ? "paid" : "pending_payment",
-
-    // ⭐ Address fields
-    address: method === "shipping" ? formData.address : null,
-    city: method === "shipping" ? formData.city : null,
-    state: method === "shipping" ? "MI" : null,
-    zip: method === "shipping" ? formData.zip : null,
-
-    // ⭐ Notes
-    notes: method === "pickup" ? "Pickup order" : "Online shipping order",
-
-    // ⭐ Payment fields
-    paymentType: paymentType === "card" ? "card" : "pickup",
-    cardEntryMethod: paymentType === "card" ? "online" : "none",
-    stripePaymentId: stripeId || "",
-    cashTendered: 0,
-    changeGiven: 0
-  };
-
+    // 🚀 3. Send to Railway
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/orders`, {
         method: "POST",
@@ -92,17 +142,18 @@ export default function CartDrawer({
         setView("success");
       } else {
         const err = await res.json();
-        console.error("Validation Errors:", err);
         alert(`Order failed: ${JSON.stringify(err.errors || err)}`);
       }
     } catch (err) {
-      console.error("Fetch Error:", err);
       alert("Could not connect to Railway backend.");
     } finally {
       setIsSubmitting(false);
     }
   };
-
+  
+  /* -------------------------------------------------------
+     Navigation & Validation
+  ------------------------------------------------------- */
   const handleAction = (nextView: "payment" | "success") => {
     if (isFormValid()) {
       if (nextView === "success") {
@@ -177,14 +228,17 @@ export default function CartDrawer({
           </h1>
         </div>
 
+        {/* SCROLLABLE CONTENT AREA */}
         <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
+          
+          {/* VIEW: METHODS (Choose Pickup vs Shipping) */}
           {view === "methods" && (
             <div className="p-1">
               <OrderSummary cart={cart} method={null} subtotal={subtotal} finalTotal={subtotal} onIncrement={onIncrement} onDecrement={onDecrement} onUpdateQuantity={onUpdateQuantity} onRemove={onRemove} />
               <div className="space-y-3 mt-4">
                 <div className="p-5 rounded-3xl border-2 border-violet-300/50 border-dashed bg-violet-100 shadow-inner">
                   <h3 className="mb-2 text-[11px] font-black uppercase tracking-[0.2em] text-violet-600">Pickup or Shipping?</h3>
-                  <button onClick={() => { setMethod("pickup"); setView("details"); }} className="w-full p-5 bg-white border-2 border-violet-200 rounded-3xl hover:border-violet-600 transition-all flex items-center justify-between group mb-2">
+                  <button onClick={() => handleSelectMethod("pickup")} className="w-full p-5 bg-white border-2 border-violet-200 rounded-3xl hover:border-violet-600 transition-all flex items-center justify-between group mb-2">
                     <div className="flex items-center gap-4">
                       <span className="text-3xl">🛍️</span>
                       <div className="text-left">
@@ -194,7 +248,7 @@ export default function CartDrawer({
                     </div>
                     <span className="text-stone-300 group-hover:text-violet-600 font-bold">→</span>
                   </button>
-                  <button onClick={() => { setMethod("shipping"); setMethod("shipping"); setView("details"); }} className="w-full p-5 bg-white border-2 border-violet-200 rounded-3xl hover:border-violet-600 transition-all flex items-center justify-between group">
+                  <button onClick={() => handleSelectMethod("shipping")} className="w-full p-5 bg-white border-2 border-violet-200 rounded-3xl hover:border-violet-600 transition-all flex items-center justify-between group">
                     <div className="flex items-center gap-4">
                       <span className="text-3xl">📦</span>
                       <div className="text-left">
@@ -209,6 +263,7 @@ export default function CartDrawer({
             </div>
           )}
 
+          {/* VIEW: DETAILS (Contact & Address Form) */}
           {view === "details" && (
             <div className="space-y-3">
               <div className="mb-8 p-5 rounded-3xl border-2 border-violet-300/50 border-dashed bg-violet-100 shadow-inner space-y-3">
@@ -239,7 +294,7 @@ export default function CartDrawer({
                   onClick={() => handleAction("payment")} 
                   className="w-full py-5 bg-violet-600 text-white rounded-[2rem] font-bold uppercase tracking-[0.2em] shadow-xl hover:scale-[1.02] active:scale-95 disabled:opacity-50"
                 >
-                  Pay Now
+                  {isSubmitting ? "Processing..." : "Pay Now"}
                 </button>
                 {method === 'pickup' && (
                   <button 
@@ -247,13 +302,14 @@ export default function CartDrawer({
                     onClick={() => handleAction("success")} 
                     className="w-full py-5 bg-white border-2 border-stone-200 text-stone-600 rounded-[2rem] font-bold uppercase tracking-[0.2em] hover:bg-stone-50 transition-all disabled:opacity-50"
                   >
-                    {isSubmitting ? "Processing..." : "Pay at Pickup"}
+                    Pay at Pickup
                   </button>
                 )}
               </div>
             </div>
           )}
 
+          {/* VIEW: PAYMENT (Stripe Elements) */}
           {view === "payment" && (
             <Elements stripe={stripePromise} options={{ 
                 mode: 'payment', 
@@ -276,6 +332,7 @@ export default function CartDrawer({
             </Elements>
           )}
 
+          {/* VIEW: SUCCESS (Confirmation Screen) */}
           {view === "success" && (
             <div className="text-center space-y-6 py-12 animate-in fade-in zoom-in duration-500">
               <div className="relative inline-block">
@@ -292,6 +349,15 @@ export default function CartDrawer({
           )}
         </div>
       </div>
+
+      {/* 👤 REWARDS MODAL TRIGGER */}
+      <LoginModal 
+        isOpen={isLoginOpen} 
+        onClose={() => {
+          setIsLoginOpen(false);
+          setView("details"); // Go to details whether they logged in or closed as guest
+        }} 
+      />
     </div>
   );
 }

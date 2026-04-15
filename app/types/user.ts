@@ -23,4 +23,8 @@ export type User = {
   email?: string;           // Optional email for login + receipts
   password?: string | null; // Optional hashed password (null for quick signups)
   loyaltyPoints: number;    // Loyalty balance for rewards system
+  address?: string;         // Optional street address
+  city?: string;            // Optional city
+  zip?: string;             // Optional ZIP code
+
 };

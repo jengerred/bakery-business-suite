@@ -37,6 +37,9 @@ namespace BakeryBackend.Controllers
             return Ok(profile);
         }
 
+
+        // PUT /api/profiles/{id}
+
         // ➕ POST /api/profiles
        [HttpPost]
         public async Task<IActionResult> CreateProfile([FromBody] UserDto dto)

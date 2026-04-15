@@ -65,6 +65,26 @@ export const userService = {
     return await res.json();
   },
   
+    /* -------------------------------------------------------
+        🔄 update() 
+        It uses PUT to modify an existing record by ID.
+    ------------------------------------------------------- */
+   async update(id: string, data: { 
+  name?: string; 
+  phone?: string; 
+  email?: string;
+  address?: string;
+  city?: string;
+  zip?: string;
+}) {
+  const res = await fetch(`${API}/api/profiles/${id}`, {
+    method: "PUT", 
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  return await res.json();
+},
+
   /* -------------------------------------------------------
      🔑 login()
      Alias for find() used by the Online Shop LoginModal.
@@ -72,27 +92,6 @@ export const userService = {
   async login(emailOrPhone: string): Promise<User | null> {
     return this.find(emailOrPhone);
   },
-
-/* -------------------------------------------------------
-     🔄 update()
-     Updates an existing profile (e.g., adding a phone number).
-  ------------------------------------------------------- */
-  async update(id: string, data: { name?: string; phone?: string; email?: string }) {
-    const res = await fetch(`${API}/api/profiles/${id}`, {
-      method: "PUT", // or PATCH depending on your C# controller
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
-    });
-
-    if (!res.ok) {
-      const errorText = await res.text();
-      console.error("❌ Update Failed:", errorText);
-      throw new Error("Failed to update profile.");
-    }
-
-    return await res.json();
-  },
-
 
   /* -------------------------------------------------------
      📋 all()

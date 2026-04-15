@@ -12,25 +12,25 @@ export default function LogisticsTicker() {
             Fridays @ 12:00PM (Nextech High)
           </span>
 
-          <span className="mx-20 text-stone-800">//</span> 
+          <span className="mx-20 text-stone-300">//</span> 
 
           <span>
-            <span className="text-violet-400 mr-2">📦 Shipping:</span> 
-            All orders sent every Friday
+            <span className="text-violet-300 mr-2">📦 Shipping:</span> 
+            All orders shipped every Friday
           </span>
 
-          <span className="mx-20 text-stone-800">//</span> 
+          <span className="mx-20 text-stone-300">//</span> 
 
           <span>
             <span className="text-violet-400 mr-2">📍 Pickup:</span> 
             Fridays @ 12:00PM (Nextech High)
           </span>
 
-          <span className="mx-20 text-stone-800">//</span> 
+          <span className="mx-20 text-stone-300">//</span> 
 
           <span>
             <span className="text-violet-400 mr-2">📦 Shipping:</span> 
-            All orders sent every Friday
+            All orders shipped every Friday
           </span>
           
           <span className="ml-[20vw]"></span> 
