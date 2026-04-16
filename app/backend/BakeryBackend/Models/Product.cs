@@ -34,5 +34,8 @@ namespace BakeryBackend.Models
 
         [Column("sort_order")]
         public short SortOrder { get; set; }         // Controls display order
+
+        public int StockQuantity { get; set; }
+        public bool TrackInventory { get; set; }
     }
 }
