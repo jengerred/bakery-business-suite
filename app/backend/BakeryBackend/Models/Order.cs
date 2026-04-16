@@ -74,6 +74,10 @@ namespace BakeryBackend.Models
         public string? Zip { get; set; }
 
         [Column("status")]
-        public string Status { get; set; } = "paid";
+        public string Status { get; set; } = "pending"; // pending, paid, shipped, pickedUp, cancelled
+        public string FulfillmentMethod { get; set; } = "InStore"; // Shipping, Pickup, Delivery, InStore
+        public string? TrackingNumber { get; set; } // Optional for shipping
+        public DateTime? FulfilledAt { get; set; }
+
     }
 }

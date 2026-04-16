@@ -30,11 +30,11 @@ namespace BakeryBackend.Controllers
             if (order == null)
                 return BadRequest("Order payload is missing.");
 
-            // ✅ Renamed to 'newOrder' to avoid conflict with 'order' parameter
+            // Renamed to 'newOrder' to avoid conflict with 'order' parameter
             var newOrder = new Order
             {
                 Id = Guid.NewGuid(),
-                // ✅ Mapping from 'order' fields
+                // 📍 Mapping from 'order' fields
                 Items = order.Items.Select(i => new OrderItem
                 {
                     Product = i.Product,
@@ -60,12 +60,12 @@ namespace BakeryBackend.Controllers
 
                 PickupTime = order.PickupTime,
                 Notes = order.Notes,
-                FulfillmentType = order.FulfillmentType,
+                FulfillmentMethod = order.FulfillmentType ?? "Pickup",
                 Address = order.Address,
                 City = order.City,
                 State = order.State,
                 Zip = order.Zip,
-                Status = order.Status ?? "paid"
+                Status = "pending", // Default status
             };
 
             /* ---------------------------------------------------------
@@ -74,8 +74,9 @@ namespace BakeryBackend.Controllers
             --------------------------------------------------------- */
             foreach (var item in newOrder.Items)
             {
-                // Compare p.Name (string) to item.Product.Name (string) 
-                // or item.Product if 'item.Product' is the string name from the DTO.
+
+                /* Compare p.Name (string) to item.Product.Name (string)  
+                    to 🔍 find the matching product in the database */
                 var product = await _db.Products
                     .FirstOrDefaultAsync(p => p.Name == item.Product.Name);
 
@@ -121,5 +122,33 @@ namespace BakeryBackend.Controllers
 
             return Ok(orders);
         }
+
+        /* ---------------------------------------------------------
+           🛠️ UPDATE ORDER STATUS (The Ops Center Action)
+           PATCH: api/orders/{id}/status
+        --------------------------------------------------------- */
+        [HttpPatch("{id}/status")]
+        public async Task<IActionResult> UpdateStatus(Guid id, [FromBody] UpdateStatusDto dto)
+        {
+            var order = await _db.Orders.FindAsync(id);
+            if (order == null) return NotFound("Order not found.");
+
+            order.Status = dto.NewStatus;
+
+            // Timestamp fulfillment
+            if (dto.NewStatus == "Shipped" || dto.NewStatus == "PickedUp" || dto.NewStatus == "Completed")
+            {
+                order.FulfilledAt = DateTime.UtcNow;
+            }
+
+            await _db.SaveChangesAsync();
+            return Ok(order);
+        }
+    }
+
+    // Small DTO for the status update
+    public class UpdateStatusDto
+    {
+        public string NewStatus { get; set; } = string.Empty;
     }
 }
