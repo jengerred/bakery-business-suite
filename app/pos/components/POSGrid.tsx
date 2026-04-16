@@ -172,7 +172,9 @@ export default function POSGrid({
         <div className="grid grid-cols-1 gap-6 items-start min-[850px]:grid-cols-12">
           <div className="col-span-1 min-[850px]:col-span-8">
             <section className="p-6 border rounded-[2.5rem] bg-violet-950/90 shadow-xl shadow-violet-900 h-[480px] overflow-y-auto custom-scrollbar">
-              <h2 className="inline-block text-xl font-black text-violet-200 uppercase tracking-[0.2em] sticky top-0 z-10 bg-violet-500/80 backdrop-blur-xl border border-violet-700/40 px-4 py-2 rounded-xl shadow-md">🧁 Our Menu</h2>
+              <h2 className="p-1 inline-block text-xl font-black text-violet-200 uppercase tracking-[0.2em] bg-violet-500/80 backdrop-blur-xl border border-violet-700/40 rounded-xl shadow-md">
+              🧁 Our Menu
+              </h2>
               <ProductList onAdd={(product, qty, price) => openProductModal(product, qty, price)} />
             </section>
           </div>

@@ -31,7 +31,7 @@ export default function ShopNavbar({ cartCount, onOpenCart }: ShopNavbarProps) {
         </Link>
         
       {/* User Auth Section - Clean & Personal */}
-          <div className="flex items-center gap-4">
+          <div className="hidden md:flex flex-col items-center gap-2 -ml-35">
             {user ? (
               <div className="flex flex-col items-center animate-in fade-in slide-in-from-right-4 duration-500">
                 <span className="text-sm text-stone-500 uppercase font-black tracking-[0.2em] mb-0.5"> 

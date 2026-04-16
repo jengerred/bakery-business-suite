@@ -1,7 +1,5 @@
 "use client";
 
-// subtree sync
-
 
 /* ----------------------------------------------------------
    Imports
@@ -23,22 +21,12 @@ type CartItem = {
 
 /* ---------------------------------------------------------
    SHOP PAGE (Main Component)
-   - Fetches products from backend
-   - Sorts by sort_order
-   - Groups Single + Dozen pairs
-   - Manages cart state + drawer
    --------------------------------------------------------- */
 export default function ShopPage() {
-  /* -----------------------------
-     State
-     ----------------------------- */
   const [products, setProducts] = useState<Product[]>([]);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
 
-  /* -----------------------------
-     Fetch products from backend
-     ----------------------------- */
   useEffect(() => {
     async function loadProducts() {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/products`);
@@ -48,15 +36,9 @@ export default function ShopPage() {
     loadProducts();
   }, []);
 
-  /* -----------------------------
-     Cart Logic
-     ----------------------------- */
-
-  // Add item to cart
   const handleAddToCart = (product: Product) => {
     setCart((prev) => {
       const existing = prev.find((item) => item.product.id === product.id);
-
       if (existing) {
         return prev.map((item) =>
           item.product.id === product.id
@@ -64,90 +46,52 @@ export default function ShopPage() {
             : item
         );
       }
-
       return [...prev, { product, quantity: 1 }];
     });
-
     setIsCartOpen(true);
   };
 
-  // Increase quantity
   const handleIncrement = (productId: number) => {
     setCart((prev) =>
       prev.map((item) =>
-        item.product.id === productId
-          ? { ...item, quantity: item.quantity + 1 }
-          : item
+        item.product.id === productId ? { ...item, quantity: item.quantity + 1 } : item
       )
     );
   };
 
-  // Update quantity manually
   const handleUpdateQuantity = (productId: number, newQty: number) => {
     setCart((prev) =>
       prev.map((item) =>
-        item.product.id === productId
-          ? { ...item, quantity: Math.max(1, newQty) }
-          : item
+        item.product.id === productId ? { ...item, quantity: Math.max(1, newQty) } : item
       )
     );
   };
 
-  // Decrease quantity
   const handleDecrement = (productId: number) => {
     setCart((prev) =>
       prev
         .map((item) =>
-          item.product.id === productId
-            ? { ...item, quantity: item.quantity - 1 }
-            : item
+          item.product.id === productId ? { ...item, quantity: item.quantity - 1 } : item
         )
         .filter((item) => item.quantity > 0)
     );
   };
 
-  // Remove item entirely
   const handleRemove = (productId: number) => {
     setCart((prev) => prev.filter((item) => item.product.id !== productId));
   };
 
-  /* -----------------------------
-     Sort products by sort_order
-     ----------------------------- */
   const sorted = [...products].sort((a, b) => a.sortOrder - b.sortOrder);
-
-  /* -----------------------------
-     Total cart items
-     ----------------------------- */
   const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
 
-  /* -----------------------------
-     Group products into:
-     {
-       flavorName: "Chocolate Chip Cookie",
-       singleProduct: {...},
-       dozenProduct: {...}
-     }
-     ----------------------------- */
   const groupedFlavors = (() => {
     const map = new Map<string, { single?: Product; dozen?: Product }>();
-
     sorted.forEach((p) => {
-      const baseName = p.name
-        .replace(" - Single", "")
-        .replace(" - Dozen", "");
-
-      if (!map.has(baseName)) {
-        map.set(baseName, {});
-      }
-
-      if (p.name.includes("Single")) {
-        map.get(baseName)!.single = p;
-      } else if (p.name.includes("Dozen")) {
-        map.get(baseName)!.dozen = p;
-      }
+      const baseName = p.name.replace(" - Single", "").replace(" - Dozen", "");
+      if (!map.has(baseName)) map.set(baseName, {});
+      if (p.name.includes("Single")) map.get(baseName)!.single = p;
+      else if (p.name.includes("Dozen")) map.get(baseName)!.dozen = p;
     });
-
     return Array.from(map.entries()).map(([flavorName, pair]) => ({
       flavorName,
       singleProduct: pair.single,
@@ -155,40 +99,33 @@ export default function ShopPage() {
     }));
   })();
 
-  /* -----------------------------
-     UI
-     ----------------------------- */
   return (
     <div className="min-h-screen bg-violet-300">
-      {/* Top ticker */}
       <LogisticsTicker />
+      <ShopNavbar cartCount={totalItems} onOpenCart={() => setIsCartOpen(true)} />
 
-      {/* Navbar */}
-      <ShopNavbar
-        cartCount={totalItems}
-        onOpenCart={() => setIsCartOpen(true)}
-      />
-
-      {/* Main content */}
-      <main className="max-w-7xl mx-auto px-8 py-16 flex items-center justify-center min-h-[90vh]">
+      {/* ✅ MODIFIED: Reduced px-8 to px-4 on mobile to give more room */}
+      <main className="max-w-7xl mx-auto px-4 md:px-8 py-8 md:py-15 flex items-center justify-center min-h-[50vh]">
         <section
           className="
             w-full max-w-[1600px]
-            -mt-8 p-6 border rounded-[2.5rem] bg-violet-950/90 shadow-xl shadow-violet-900
+             p-4 md:p-6 border rounded-[2.5rem] bg-violet-950/90 shadow-xl shadow-violet-900
             min-h-[650px] md:min-h-[750px] lg:min-h-[80vh]
-            flex flex-col items-center justify-center
+            flex flex-col items-center
             overflow-y-auto custom-scrollbar
           "
         >
-          <h2 className="text-xl font-black mb-6 text-violet-200 uppercase tracking-[0.2em] sticky top-0 py-2 z-10">
-            Menu
+          <h2 className="text-2xl font-black mb-8 text-violet-200 uppercase tracking-[0.2em] sticky top-0  z-10 w-full text-center">
+            🧁 Menu
           </h2>
 
-          {/* Product grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
+          {/* ✅ MODIFIED: Responsive Grid logic matches POS 
+              - grid-cols-2 starts much earlier (sm)
+              - gap reduced from 12 to 4/6 to stop cards from being huge
+          */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-8 w-full">
             {groupedFlavors.map(({ flavorName, singleProduct, dozenProduct }) => {
               if (!singleProduct || !dozenProduct) return null;
-
               return (
                 <ShopProductCard
                   key={flavorName}
@@ -203,7 +140,6 @@ export default function ShopPage() {
         </section>
       </main>
 
-      {/* Cart Drawer */}
       <CartDrawer
         isOpen={isCartOpen}
         onClose={() => setIsCartOpen(false)}

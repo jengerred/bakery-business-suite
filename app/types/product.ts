@@ -25,4 +25,6 @@ export type Product = {
   imageUrl?: string;      // Product image (mapped from `image_url`)
   sortOrder: number;      // Controls display order in Shop + POS
   taxable: boolean;       // Michigan tax flag (bakery items = false)
+  stockQuantity: number;    // Maps from StockQuantity
+  trackInventory: boolean;  // Maps from TrackInventory
 };
