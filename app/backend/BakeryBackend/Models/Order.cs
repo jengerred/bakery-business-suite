@@ -75,8 +75,11 @@ namespace BakeryBackend.Models
 
         [Column("status")]
         public string Status { get; set; } = "pending"; // pending, paid, shipped, pickedUp, cancelled
-        public string FulfillmentMethod { get; set; } = "InStore"; // Shipping, Pickup, Delivery, InStore
+
+        [Column("TrackingNumber")]
         public string? TrackingNumber { get; set; } // Optional for shipping
+
+        [Column("FulfilledAt")]
         public DateTime? FulfilledAt { get; set; }
 
     }

@@ -60,7 +60,7 @@ namespace BakeryBackend.Controllers
 
                 PickupTime = order.PickupTime,
                 Notes = order.Notes,
-                FulfillmentMethod = order.FulfillmentType ?? "Pickup",
+                FulfillmentType = order.FulfillmentType ?? "pickup", // Default to pickup if not provided
                 Address = order.Address,
                 City = order.City,
                 State = order.State,
