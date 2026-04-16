@@ -114,7 +114,7 @@ export default function CartDrawer({
       customerId: user?.id || "", 
       fulfillmentType: method === "shipping" ? "shipping" : "pickup",
       pickupTime: null,
-      status: paymentType === "card" ? "paid" : "pending_payment",
+      status: paymentType === "card" ? "paid" : "unpaid",
       address: method === "shipping" ? formData.address : null,
       city: method === "shipping" ? formData.city : null,
       state: "MI",

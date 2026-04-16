@@ -109,8 +109,8 @@ export function OrderHistoryProvider({ children }: { children: React.ReactNode }
           CustomerPhone: order.customerPhone || "",
 
           // Fulfillment (The new missing pieces)
-          Status: order.status || "paid",
-          FulfillmentType: order.fulfillmentType || "POS",
+          Status: "completed", // Default to completed if not provided
+          FulfillmentType:"POS",
           PickupTime: order.pickupTime || "", // Added this specifically
           
           // Address Info
