@@ -22,12 +22,7 @@
     --foreground: #f8fafc;
   }
 
-  body {
-    background-image: url('/bakery2-bg.png'); /* The path to your image */
-  background-size: cover; /* This makes the image cover the entire background */
-  background-position: center; /* This centers the image */
-  background-repeat: no-repeat; /* This prevents the image from tiling */
-  }
+ 
 }
 
 /* -------------------------------------------------------

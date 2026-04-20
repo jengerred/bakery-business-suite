@@ -153,6 +153,7 @@ export default function POSGrid({
                 </span>
                 Register
               </button>
+               <Link href="/pos/pickup" className="px-6 py-2.5 bg-violet-200/40 hover:bg-violet-600 hover:text-white text-violet-700 rounded-xl font-bold uppercase tracking-widest text-xs transition-all active:scale-95 border border-white/20">Pickup Orders</Link>
               <Link href="/pos/transactions" className="px-6 py-2.5 bg-violet-200/40 hover:bg-violet-600 hover:text-white text-violet-700 rounded-xl font-bold uppercase tracking-widest text-xs transition-all active:scale-95 border border-white/20">
                 Transactions
               </Link>
