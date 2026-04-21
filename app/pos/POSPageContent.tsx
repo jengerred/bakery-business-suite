@@ -1,6 +1,6 @@
 "use client";
 
-// subtree sync
+
 
 
 /* -------------------------------------------------------
@@ -19,7 +19,6 @@ import type { CompletedOrder } from "./context/OrderHistoryContext";
 ------------------------------------------------------- */
 import { useTerminalSimulation } from "./hooks/useTerminalSimulation";
 import { useCart } from "./hooks/useCart";
-import { useStripeRedirectToast } from "./hooks/useStripeRedirectToast";
 
 /* -------------------------------------------------------
    🧱 Components (UI Building Blocks)
@@ -71,10 +70,6 @@ export default function POSPageContent({ pickupOrderId }: { pickupOrderId?: stri
     handleDecrease,
   } = useCart();
 
-  /* ------------------------------
-     🔔 Stripe Redirect Toasts
-  ------------------------------ */
-  useStripeRedirectToast();
 
   return (
     <div className="min-h-screen bg-violet-50 dark:bg-slate-950 transition-colors duration-500">

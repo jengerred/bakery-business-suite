@@ -3,14 +3,24 @@
 import { Suspense } from "react";
 import POSPageContent from "./POSPageContent";
 import { useSearchParams } from "next/navigation";
+import { StripeRedirectToast } from "./hooks/useStripeRedirectToast";
 
-export default function POSPage() {
+function POSPageInner() {
   const searchParams = useSearchParams();
   const pickupOrderId = searchParams.get("orderId") ?? undefined;
 
   return (
-    <Suspense fallback={<div>Loading POS…</div>}>
+    <>
+      <StripeRedirectToast />
       <POSPageContent pickupOrderId={pickupOrderId} />
+    </>
+  );
+}
+
+export default function POSPage() {
+  return (
+    <Suspense fallback={<div>Loading POS…</div>}>
+      <POSPageInner />
     </Suspense>
   );
 }

@@ -25,7 +25,7 @@ import { toast } from "react-hot-toast";
    - It is NOT used for Stripe Elements (your POS flow).
    - Safe to keep in the repo for future online checkout.
 ------------------------------------------------------- */
-export function useStripeRedirectToast() {
+export function StripeRedirectToast() {
   /* -------------------------------------------------------
      🔍 Read URL query parameters
   ------------------------------------------------------- */
@@ -41,4 +41,6 @@ export function useStripeRedirectToast() {
     if (success) toast.success("Payment successful!");
     if (canceled) toast.error("Payment canceled.");
   }, [success, canceled]);
+  
+  return null;
 }
