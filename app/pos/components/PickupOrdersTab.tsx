@@ -3,6 +3,9 @@
 import { JSX, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
+import POSNav from "./POSNav";
+
+
 /* -------------------------------------------------------
    ORDER TYPE
 -------------------------------------------------------- */
@@ -103,12 +106,14 @@ export default function PickupOrdersTab() {
   const pickedUp = orders.filter((o) => o.status === "PickedUp");
 
   return (
-    <div className="min-h-screen px-6 py-8 bg-fuchsia-300/30">
+    <div className="min-h-screen px-8 py-2 bg-fuchsia-300/30 flex flex-col gap-4">
+
+      <POSNav active="pickup" />
 
       {/* HEADER */}
       <div className="mb-8">
         <h1 className="text-4xl font-black uppercase tracking-tight text-slate-900">
-          Pickup Queue
+          Pickup Orders Queue
         </h1>
         <p className="text-xs uppercase tracking-[0.25em] text-violet-600 mt-2 font-bold">
           Cashier View • Today’s Orders

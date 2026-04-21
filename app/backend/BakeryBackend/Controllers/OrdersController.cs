@@ -127,15 +127,28 @@ namespace BakeryBackend.Controllers
            🛠️ UPDATE ORDER STATUS (The Ops Center Action)
            PATCH: api/orders/{id}/status
         --------------------------------------------------------- */
-        [HttpPatch("{id}/status")]
+     [HttpPatch("{id}/status")]
         public async Task<IActionResult> UpdateStatus(Guid id, [FromBody] UpdateStatusDto dto)
         {
             var order = await _db.Orders.FindAsync(id);
             if (order == null) return NotFound("Order not found.");
 
+            // Update status
             order.Status = dto.NewStatus;
 
-            // Timestamp fulfillment
+            // Save pickup time if provided
+            if (dto.Pickup_Time.HasValue)
+                order.PickupTime = dto.Pickup_Time.Value;
+
+            // Save cash tendered if provided
+            if (dto.Cash_Tendered.HasValue)
+                order.CashTendered = dto.Cash_Tendered.Value;
+
+            // Save change given if provided
+            if (dto.Change_Given.HasValue)
+                order.ChangeGiven = dto.Change_Given.Value;
+
+            // Auto-set FulfilledAt for completed statuses
             if (dto.NewStatus == "Shipped" || dto.NewStatus == "PickedUp" || dto.NewStatus == "Completed")
             {
                 order.FulfilledAt = DateTime.UtcNow;
@@ -144,11 +157,16 @@ namespace BakeryBackend.Controllers
             await _db.SaveChangesAsync();
             return Ok(order);
         }
+
     }
 
     // Small DTO for the status update
-    public class UpdateStatusDto
+   public class UpdateStatusDto
     {
         public string NewStatus { get; set; } = string.Empty;
+        public DateTime? Pickup_Time { get; set; }
+        public decimal? Cash_Tendered { get; set; }
+        public decimal? Change_Given { get; set; }
     }
+
 }

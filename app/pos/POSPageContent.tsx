@@ -36,7 +36,8 @@ import { createCompletedOrder } from "./lib/handleCheckout";
    🖥️ POS Page Content
    Uses real backend Product type (app/types/product.ts)
 ------------------------------------------------------- */
-export default function POSPageContent() {
+export default function POSPageContent({ pickupOrderId }: { pickupOrderId?: string }) {
+
   /* ------------------------------
      🧾 Local UI State
   ------------------------------ */
@@ -102,6 +103,7 @@ export default function POSPageContent() {
           setOrder([]);
           setShowCheckout(false);
         }}
+         pickupOrderId={pickupOrderId} 
       />
 
       {/* 🛠️ Product Options Modal */}
