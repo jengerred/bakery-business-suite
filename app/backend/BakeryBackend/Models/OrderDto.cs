@@ -35,7 +35,7 @@ namespace BakeryBackend.Dtos
         public string? City { get; set; }
         public string? State { get; set; }
         public string? Zip { get; set; }
-        public string Status { get; set; } = "paid";
+        public string Status { get; set; } = "pending";
     }
 
     public class OrderItemDto

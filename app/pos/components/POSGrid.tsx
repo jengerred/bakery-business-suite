@@ -78,7 +78,7 @@ export default function POSGrid({
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
   /* -------------------------------------------------------
-  ⭐ NEW — Auto-load pickup order into POS cart
+  ⭐ Auto-load pickup order into POS cart
   ------------------------------------------------------- */
  useEffect(() => {
   async function loadPickupOrder() {
@@ -88,7 +88,10 @@ export default function POSGrid({
       const allOrdersRes = await fetch(`${API_URL}/api/orders`);
       const allOrders = await allOrdersRes.json();
 
-      const orderData = allOrders.find((o: any) => o.id === pickupOrderId);
+      const orderData = allOrders.find(
+        (o: any) => o.id === pickupOrderId && o.fulfillmentType === "pickup"
+      );
+
 
       if (!orderData) {
         console.error("Pickup order not found:", pickupOrderId);
@@ -161,15 +164,22 @@ export default function POSGrid({
     return () => window.removeEventListener("reader-receipt-choice", handleReceiptChoice);
   }, [lastOrder]);
 
-  function handleCloseReceipt() {
-    setShowReceipt(false);
-      if (!pickupOrderId) {
+ function handleCloseReceipt() {
+  setShowReceipt(false);
+
+  if (!pickupOrderId) {
+    // normal POS order → clear customer
     setCustomer(null);
-    }
-    setReceiptMethod(undefined);
-    setIsReaderActive(false);
-    window.dispatchEvent(new CustomEvent("cashier-receipt-done"));
+  } else {
+    // pickup order → redirect AFTER receipt closes
+    window.location.href = "/pos";
   }
+
+  setReceiptMethod(undefined);
+  setIsReaderActive(false);
+  window.dispatchEvent(new CustomEvent("cashier-receipt-done"));
+}
+
 
   const handleUpdateQty = (productId: number, newQty: number) => {
     setOrder((prev: any[]) =>
@@ -308,63 +318,75 @@ export default function POSGrid({
               window.dispatchEvent(new CustomEvent("cashier-cancel-checkout"));
             }}
          onComplete={async (paymentData) => {
-  // ⭐ PICKUP ORDER FLOW
-  if (pickupOrderId) {
-    await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/api/orders/${pickupOrderId}/status`,
-      {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          newStatus: "PickedUp",
-          pickup_time: new Date().toISOString(),
-          cash_tendered: paymentData.cashTendered || 0,
-          change_given: paymentData.changeGiven || 0,
-        }),
-      }
-    );
 
-    setShowReceipt(true);
-    setOrder([]);
-    setShowCheckout(false);
+ // ⭐ PICKUP ORDER FLOW
+if (pickupOrderId) {
+  // Update backend order status
+  const res = await fetch(
+    `${process.env.NEXT_PUBLIC_API_URL}/api/orders/${pickupOrderId}/status`,
+    {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        newStatus: "PickedUp",
+        pickup_time: new Date().toISOString(),
+        cash_tendered: paymentData.cashTendered || 0,
+        change_given: paymentData.changeGiven || 0,
+      }),
+    }
+  );
 
-    // ⭐ Redirect to clean POS so customer resets
-    window.location.href = "/pos";
+  // ⭐ Load updated order so receipt has data
+  const updatedOrder = await res.json();
+  setLastOrder(updatedOrder);
 
-    return;
-  }
+  // ⭐ Show receipt BEFORE redirect
+  setShowReceipt(true);
+
+  // Reset POS cart + checkout modal
+  setOrder([]);
+  setShowCheckout(false);
+
+  // ⭐ DO NOT redirect here — receipt won't show
+  return;
+}
+
 
   // ⭐ POS ORDER FLOW (normal walk‑in)
   const { subtotal, tax, total: finalTotal } = calculateTotals(order);
   const customerData = customer as any;
 
   const completedPayload = {
-    items: order.map((item) => ({
-      product: item.product,
-      quantity: item.quantity,
-    })),
-    subtotal,
-    tax,
-    total: finalTotal,
-    paymentType: paymentData.paymentType,
-    cardEntryMethod: paymentData.cardEntryMethod || "none",
-    cashTendered: paymentData.cashTendered || 0,
-    changeGiven: paymentData.changeGiven || 0,
-    stripePaymentId: paymentData.stripePaymentId || "",
-    createdAt: new Date().toISOString(),
-    customerId: customer?.id || "",
-    customerName: customer?.name || "Guest",
-    customerEmail: customer?.email || "",
-    customerPhone: customer?.phone || "",
-    status: "paid",
-    fulfillmentType: "POS",
-    pickupTime: new Date().toISOString(),
-    address: customerData?.address || "",
-    city: customerData?.city || "",
-    state: customerData?.state || "MI",
-    zip: customerData?.zip || "",
-    notes: paymentData.notes || "",
-  };
+  Items: order.map((item) => ({
+    Product: item.product,
+    Quantity: item.quantity,
+  })),
+
+  Subtotal: subtotal,
+  Tax: tax,
+  Total: finalTotal,
+
+  PaymentType: paymentData.paymentType,
+  CardEntryMethod: paymentData.cardEntryMethod || "none",
+  CashTendered: paymentData.cashTendered || 0,
+  ChangeGiven: paymentData.changeGiven || 0,
+  StripePaymentId: paymentData.stripePaymentId || "",
+
+  CustomerId: customer?.id || "",
+  CustomerName: customer?.name || "Guest",
+  CustomerEmail: customer?.email || "",
+  CustomerPhone: customer?.phone || "",
+
+  Status: "completed",
+  FulfillmentType: "POS",
+  PickupTime: new Date().toISOString(),
+
+  Address: customerData?.address || "",
+  City: customerData?.city || "",
+  State: customerData?.state || "MI",
+  Zip: customerData?.zip || "",
+  Notes: paymentData.notes || "",
+};
 
   const res = await fetch(
     `${process.env.NEXT_PUBLIC_API_URL}/api/orders`,

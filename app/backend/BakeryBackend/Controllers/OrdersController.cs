@@ -65,7 +65,7 @@ namespace BakeryBackend.Controllers
                 City = order.City,
                 State = order.State,
                 Zip = order.Zip,
-                Status = "pending", // Default status
+                Status = order.Status, 
             };
 
             /* ---------------------------------------------------------

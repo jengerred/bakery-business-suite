@@ -3,7 +3,7 @@
 import { JSX, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
-import POSNav from "./POSNav";
+import POSNav from "../../components/POSNav";
 
 
 /* -------------------------------------------------------
@@ -100,8 +100,8 @@ export default function PickupOrdersTab() {
 
   const readyOrders = orders.filter((o) => o.status === "Ready");
 
-  const readyUnpaid = readyOrders.filter((o) => o.status === "Ready" && o.paymentType === "pickup");
-  const readyPaid = readyOrders.filter((o) => o.status === "Ready" && o.paymentType !== "pickup");
+  const readyUnpaid = readyOrders.filter((o) => o.status === "Ready" && o.paymentType !== "card");
+  const readyPaid = readyOrders.filter((o) => o.status === "Ready" && o.paymentType === "card");
 
   const pickedUp = orders.filter((o) => o.status === "PickedUp");
 
@@ -143,7 +143,7 @@ export default function PickupOrdersTab() {
               <div className="min-w-[260px]" key={order.id}>
                 <PickupCard
                   order={order}
-                  variant="picked"
+                  variant="picked-up"
                   expandedOrder={expandedOrder}
                   setExpandedOrder={setExpandedOrder}
                 />
@@ -259,7 +259,7 @@ function PickupCard({
   onMarkPickedUp,
 }: {
   order: Order;
-  variant: "prep" | "ready-unpaid" | "ready-paid" | "picked";
+  variant: "prep" | "ready-unpaid" | "ready-paid" | "picked-up";
   expandedOrder: string | null;
   setExpandedOrder: (id: string | null) => void;
   onMarkReady?: () => void;
@@ -271,7 +271,7 @@ function PickupCard({
   const showTimestamp = Boolean(order.pickupTime);
   const timestamp = order.pickupTime ? new Date(order.pickupTime) : null;
 
-  const isPickedUp = variant === "picked";
+  const isPickedUp = variant === "picked-up";
 
   return (
     <div className="bg-white border-1 border-slate-800 rounded-3xl p-5 shadow-sm hover:shadow-md transition-all">
@@ -300,11 +300,12 @@ function PickupCard({
             )}
 
 
-            {variant === "picked" && (
+            {variant === "picked-up" && (
               <span className="w-3 h-3 rounded-full bg-stone-400"></span>
             )}
+
                 <h3 className="text-xl font-black uppercase text-slate-900 leading-none">
-                  {order.customerName || "Walk-in"}
+                  {order.customerName}
                 </h3>
           </div>
         <span className="text-lg font-black text-violet-600">
@@ -330,7 +331,7 @@ function PickupCard({
        {!isPickedUp && (
   <p
     className={
-      order.cardEntryMethod === "none"
+      order.cardEntryMethod === " "
         ? "text-lg font-black text-red-600 tracking-tight"
         : "text-lg font-black text-stone-700 tracking-tight"
     }
@@ -446,7 +447,7 @@ function PickupCard({
         </button>
       )}
 
-      {variant === "picked" && (
+      {variant === "picked-up" && (
         <button
           disabled
           className="w-full py-3 rounded-xl bg-stone-200 text-stone-500 text-[11px] font-black uppercase tracking-[0.25em] cursor-default mt-4"

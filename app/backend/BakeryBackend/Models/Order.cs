@@ -59,7 +59,7 @@ namespace BakeryBackend.Models
         public string? CustomerPhone { get; set; }
 
         [Column("fulfillment_type")]
-        public string? FulfillmentType { get; set; }
+        public string? FulfillmentType { get; set; }    // POS, pickup, shipping, delivery
 
         [Column("address")]
         public string? Address { get; set; }
@@ -74,7 +74,7 @@ namespace BakeryBackend.Models
         public string? Zip { get; set; }
 
         [Column("status")]
-        public string Status { get; set; } = "pending"; // pending, paid, shipped, pickedUp, cancelled
+        public string Status { get; set; } = "pending";
 
         [Column("TrackingNumber")]
         public string? TrackingNumber { get; set; } // Optional for shipping

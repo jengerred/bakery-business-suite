@@ -103,7 +103,7 @@ export default function CheckoutModal({
     customerEmail: customer?.email ?? "",
     customerPhone: customer?.phone ?? "",
     customerId: customer?.id ?? "walk-in",
-    status: pickupOrderId ? "PickedUp" : "paid",
+    status: pickupOrderId ? "PickedUp" : "completed",
     fulfillmentType: pickupOrderId ? "pickup" : "POS",
     pickupTime: pickupOrderId ? new Date().toISOString() : "",
     address: "In-Store",
