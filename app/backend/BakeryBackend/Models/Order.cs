@@ -22,7 +22,7 @@ namespace BakeryBackend.Models
         public decimal Total { get; set; }
 
         [Column("payment_type")]
-        public string PaymentType { get; set; } = string.Empty;
+        public string PaymentType { get; set; } = "cash";
 
         [Column("card_entry_method")]
         public string? CardEntryMethod { get; set; }

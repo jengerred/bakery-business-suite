@@ -12,7 +12,7 @@ namespace BakeryBackend.Dtos
         public decimal Tax { get; set; }
         public decimal Total { get; set; }
 
-        public string PaymentType { get; set; } = string.Empty;
+        public string PaymentType { get; set; } = "cash";
         public string? CardEntryMethod { get; set; }
 
         public decimal? CashTendered { get; set; }
