@@ -31,7 +31,7 @@ type CheckoutModalProps = {
     tax: number;
     total: number;
     paymentType: "cash" | "credit" | "debit";
-    cardEntryMethod?: "manual" | "terminal" | "none";
+    cardEntryMethod?: "manual" | "terminal" | "";
     cashTendered?: number;
     changeGiven?: number;
     stripePaymentId?: string;
@@ -62,7 +62,7 @@ export default function CheckoutModal({
   const stripe = useStripe();
   const elements = useElements();
 
-  const [paymentType, setPaymentType] = useState<"cash" | "credit" | "debit">("cash");
+  const [paymentType, setPaymentType] = useState<"cash" | "credit" | "debit" | "pending">("cash");
   const [cardEntryMethod, setCardEntryMethod] = useState<"manual" | "terminal">("manual");
   const [cashTendered, setCashTendered] = useState("");
   const [loading, setLoading] = useState(false);
@@ -110,8 +110,13 @@ export default function CheckoutModal({
     city: "Grand Rapids",
     state: "MI",
     zip: "",
-    notes: ""
-  };
+    notes: "",
+    paymentType,
+    cardEntryMethod,
+    cashTendered: paymentType === "cash" ? Number(cashTendered) : null,
+    changeGiven: paymentType === "cash" ? Number(cashTendered) - total : null,
+  
+    };
 
 
   /* -------------------------------------------------------
@@ -151,6 +156,7 @@ export default function CheckoutModal({
       window.removeEventListener("reader-payment-complete", handleReaderComplete);
     };
   }, [commonOrderData]);
+
 
   /* -------------------------------------------------------
   💳 Manual Stripe Handler
@@ -215,7 +221,7 @@ export default function CheckoutModal({
   }
 
   /* -------------------------------------------------------
-  ⭐ NEW: Final Submit Handler
+  ⭐ Final Submit Handler
   ------------------------------------------------------- */
   async function handleFinalSubmit(payload: any) {
     // ⭐ If this is a pickup order, update the existing order
@@ -241,7 +247,8 @@ export default function CheckoutModal({
     });
 
     const savedOrder = await res.json();
-    onComplete(savedOrder);
+   onComplete(payload);
+
   }
 
   /* -------------------------------------------------------

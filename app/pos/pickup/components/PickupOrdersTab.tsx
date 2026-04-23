@@ -63,9 +63,17 @@ export default function PickupOrdersTab() {
       const res = await fetch(`${API_URL}/api/orders`);
       const data = await res.json();
 
+
+
       setOrders(
-        data.filter((o: Order) => o.fulfillmentType?.toLowerCase() === "pickup")
+        data.filter((o: any) =>
+          (o.fulfillmentType ||
+          o.FulfillmentType ||
+          o.fulfillment_type)?.toLowerCase() === "pickup"
+        )
       );
+
+
     } catch (err) {
       console.error("Pickup orders load error:", err);
     } finally {

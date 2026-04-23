@@ -88,7 +88,9 @@ export default function POSGrid({
       const allOrdersRes = await fetch(`${API_URL}/api/orders`);
       const allOrders = await allOrdersRes.json();
 
-      const orderData = allOrders.find((o: any) => o.id === pickupOrderId);
+      const orderData = allOrders.find(
+        (o: any) => o.id === pickupOrderId && o.fulfillmentType === "pickup"
+      );
 
       if (!orderData) {
         console.error("Pickup order not found:", pickupOrderId);
@@ -354,32 +356,36 @@ if (pickupOrderId) {
   const customerData = customer as any;
 
   const completedPayload = {
-    items: order.map((item) => ({
-      product: item.product,
-      quantity: item.quantity,
-    })),
-    subtotal,
-    tax,
-    total: finalTotal,
-    paymentType: paymentData.paymentType,
-    cardEntryMethod: paymentData.cardEntryMethod || "none",
-    cashTendered: paymentData.cashTendered || 0,
-    changeGiven: paymentData.changeGiven || 0,
-    stripePaymentId: paymentData.stripePaymentId || "",
-    createdAt: new Date().toISOString(),
-    customerId: customer?.id || "",
-    customerName: customer?.name || "Guest",
-    customerEmail: customer?.email || "",
-    customerPhone: customer?.phone || "",
-    status: "paid",
-    fulfillmentType: "POS",
-    pickupTime: new Date().toISOString(),
-    address: customerData?.address || "",
-    city: customerData?.city || "",
-    state: customerData?.state || "MI",
-    zip: customerData?.zip || "",
-    notes: paymentData.notes || "",
-  };
+  Items: order.map((item) => ({
+    Product: item.product,
+    Quantity: item.quantity,
+  })),
+  Subtotal: subtotal,
+  Tax: tax,
+  Total: finalTotal,
+
+  PaymentType: paymentData.paymentType,
+  CardEntryMethod: paymentData.cardEntryMethod || "",
+  CashTendered: paymentData.cashTendered ?? null,
+  ChangeGiven: paymentData.changeGiven ?? null,
+  StripePaymentId: paymentData.stripePaymentId || "",
+
+  CustomerId: customer?.id || "",
+  CustomerName: customer?.name || "Guest",
+  CustomerEmail: customer?.email || "",
+  CustomerPhone: customer?.phone || "",
+
+  Status: "completed",
+  FulfillmentType: "POS",
+  PickupTime: new Date().toISOString(),
+
+  Address: customerData?.address || "",
+  City: customerData?.city || "",
+  State: customerData?.state || "MI",
+  Zip: customerData?.zip || "",
+  Notes: paymentData.notes || "",
+};
+
 
   const res = await fetch(
     `${process.env.NEXT_PUBLIC_API_URL}/api/orders`,
