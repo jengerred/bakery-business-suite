@@ -1,6 +1,6 @@
 "use client";
 
-import { JSX, useEffect, useState } from "react";
+import { JSX, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import POSNav from "../../components/POSNav";
@@ -56,33 +56,54 @@ export default function PickupOrdersTab() {
   const [showFulfillmentQueue, setShowFulfillmentQueue] = useState(true);
 
   const router = useRouter();
-
-  const loadOrders = async () => {
-    try {
-      setLoading(true);
-      const res = await fetch(`${API_URL}/api/orders`);
-      const data = await res.json();
+const [initialLoad, setInitialLoad] = useState(true);
+const previousOrdersRef = useRef<any[]>([]);
 
 
-      setOrders(
-        data.filter((o: any) =>
-          (o.fulfillmentType ||
-          o.FulfillmentType ||
-          o.fulfillment_type)?.toLowerCase() === "pickup"
-        )
-      );
+const loadOrders = async (isPolling = false) => {
+  try {
+    if (!isPolling) setLoading(true);
 
+    const res = await fetch(`${API_URL}/api/orders`);
+    const data = await res.json();
 
-    } catch (err) {
-      console.error("Pickup orders load error:", err);
-    } finally {
-      setLoading(false);
+    const pickupOnly = data.filter((o: any) =>
+      (o.fulfillmentType ||
+        o.FulfillmentType ||
+        o.fulfillment_type)?.toLowerCase() === "pickup"
+    );
+
+    // Compare with ref
+    const oldJson = JSON.stringify(previousOrdersRef.current);
+    const newJson = JSON.stringify(pickupOnly);
+
+    if (oldJson !== newJson) {
+      setOrders(pickupOnly);
+      previousOrdersRef.current = pickupOnly;
     }
-  };
 
-  useEffect(() => {
-    loadOrders();
-  }, []);
+  } catch (err) {
+    console.error("Pickup orders load error:", err);
+  } finally {
+    if (!isPolling) {
+      setLoading(false);
+      setInitialLoad(false);
+    }
+  }
+};
+
+
+useEffect(() => {
+  loadOrders(false); // first load shows spinner
+
+  const interval = setInterval(() => {
+    loadOrders(true); // polling does NOT toggle loading
+  }, 3000);
+
+  return () => clearInterval(interval);
+}, []);
+
+
 
   const updateStatus = async (orderId: string, newStatus: string) => {
     try {
@@ -108,7 +129,7 @@ export default function PickupOrdersTab() {
   const readyOrders = orders.filter((o) => o.status === "Ready");
 
   const readyUnpaid = readyOrders.filter((o) => o.status === "Ready" && o.paymentType !== "card");
-  const readyPaid = readyOrders.filter((o) => o.status === "Ready" && o.paymentType === "card");
+  const readyPaid = readyOrders.filter((o) => o.status === "Ready" && o.paymentType ===  "card");
 
   const pickedUp = orders.filter((o) => o.status === "PickedUp");
 

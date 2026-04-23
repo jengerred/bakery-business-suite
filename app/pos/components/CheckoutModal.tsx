@@ -90,6 +90,7 @@ export default function CheckoutModal({
   const total = subtotal + tax;
   const changeDue = Number(cashTendered) > 0 ? Number(cashTendered) - total : 0;
 
+
   const { customer } = useCustomer();
 
   /* -------------------------------------------------------

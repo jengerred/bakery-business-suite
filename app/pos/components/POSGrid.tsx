@@ -164,20 +164,25 @@ export default function POSGrid({
   }, [lastOrder]);
 
  function handleCloseReceipt() {
+  // 1️⃣ Close the modal immediately
   setShowReceipt(false);
 
-  if (!pickupOrderId) {
-    // normal POS order → clear customer
-    setCustomer(null);
-  } else {
-    // pickup order → redirect AFTER receipt closes
-    window.location.href = "/pos";
-  }
-
+  // 2️⃣ Reset receipt UI state
   setReceiptMethod(undefined);
   setIsReaderActive(false);
-  window.dispatchEvent(new CustomEvent("cashier-receipt-done"));
+
+  // 3️⃣ Normal POS order → clear customer + finish
+  if (!pickupOrderId) {
+    setCustomer(null);
+    window.dispatchEvent(new CustomEvent("cashier-receipt-done"));
+    return;
+  }
+
+  // 4️⃣ Pickup order → redirect AFTER modal is closed
+  // No timer needed — React unmounts the modal before this line executes
+  window.location.href = "/pos/pickup";
 }
+
 
 
   const handleUpdateQty = (productId: number, newQty: number) => {
@@ -341,6 +346,9 @@ if (pickupOrderId) {
   // ⭐ Load updated order so receipt has data
   const updatedOrder = await res.json();
   setLastOrder(updatedOrder);
+
+  // ⭐ Enable print for pickup orders
+  setReceiptMethod("print");
 
   // ⭐ Show receipt BEFORE redirect
   setShowReceipt(true);
