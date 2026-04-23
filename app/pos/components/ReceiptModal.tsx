@@ -112,8 +112,8 @@ export default function ReceiptModal({ order, receiptMethod, onClose }: ReceiptM
           <p>Method: {order.paymentType}</p>
           {order.paymentType === "cash" ? (
             <>
-              <p>Tendered: ${order.cashTendered?.toFixed(2) || "0.00"}</p>
-              <p>Change: ${order.changeGiven?.toFixed(2) || "0.00"}</p>
+              <p>Tendered: ${order.cashTendered?.toFixed(2) || ""}</p>
+              <p>Change: ${order.changeGiven?.toFixed(2) || ""}</p>
             </>
           ) : (
             <p>Entry: {order.cardEntryMethod === "terminal" ? "Chip/Tap/Swipe" : "Manual"}</p>

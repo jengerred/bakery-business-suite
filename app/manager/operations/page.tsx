@@ -293,15 +293,15 @@ function OrderCard({
             </p>
             <p>
               <span className="font-bold">Type:</span>{" "}
-              {order.paymentType || "N/A"}
+              {order.paymentType || ""}
             </p>
             <p>
               <span className="font-bold">Method:</span>{" "}
-              {order.cardEntryMethod || "N/A"}
+              {order.cardEntryMethod || ""}
             </p>
             <p className="truncate">
               <span className="font-bold">Stripe:</span>{" "}
-              {order.stripePaymentId || "None"}
+              {order.stripePaymentId || ""}
             </p>
           </div>
 
@@ -359,11 +359,11 @@ function OrderCard({
             </p>
             <p>
               <span className="font-bold">Tendered:</span> $
-              {(order.cashTendered || 0).toFixed(2)}
+              {(order.cashTendered).toFixed(2) || ""}
             </p>
             <p>
               <span className="font-bold">Change:</span> $
-              {(order.changeGiven || 0).toFixed(2)}
+              {(order.changeGiven).toFixed(2) || ""}
             </p>
           </div>
         </div>

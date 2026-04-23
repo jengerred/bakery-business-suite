@@ -64,7 +64,6 @@ export default function PickupOrdersTab() {
       const data = await res.json();
 
 
-
       setOrders(
         data.filter((o: any) =>
           (o.fulfillmentType ||
@@ -299,11 +298,11 @@ function PickupCard({
             )}
           
           {/* PREP DOT — RED IF UNPAID, GREEN IF PAID */}
-            {variant === "prep" && order.cardEntryMethod === "none" && (
+            {variant === "prep" && order.cardEntryMethod === "" && (
               <span className="w-3 h-3 rounded-full bg-red-500 border-2 border-red-800"></span>
             )}
 
-            {variant === "prep" && order.cardEntryMethod !== "none" && (
+            {variant === "prep" && order.cardEntryMethod !== "" && (
               <span className="w-3 h-3 rounded-full bg-emerald-500 border-2 border-green-800"></span>
             )}
 
@@ -337,16 +336,18 @@ function PickupCard({
         )}
 
        {!isPickedUp && (
-  <p
-    className={
-      order.cardEntryMethod === " "
-        ? "text-lg font-black text-red-600 tracking-tight"
-        : "text-lg font-black text-stone-700 tracking-tight"
-    }
-  >
-    ${order.total.toFixed(2)}
-  </p>
-)}
+      <p
+        className={
+          (order.status === "pending" || 
+          (order.status === "Ready" && order.paymentType !== "card"))
+            ? "text-lg font-black text-red-600 tracking-tight"
+            : "text-lg font-black text-stone-700 tracking-tight"
+        }
+      >
+        ${order.total.toFixed(2)}
+      </p>
+
+      )}
 
       </div>
 
@@ -406,10 +407,10 @@ function PickupCard({
             <p><span className="font-bold">Status:</span> {order.status}</p>
             <p><span className="font-bold">Subtotal:</span> ${order.subtotal?.toFixed(2)}</p>
             <p><span className="font-bold">Tax:</span> ${order.tax?.toFixed(2)}</p>
-            <p><span className="font-bold">Tendered:</span> ${order.cashTendered?.toFixed(2)}</p>
-            <p><span className="font-bold">Change:</span> ${order.changeGiven?.toFixed(2)}</p>
-            <p><span className="font-bold">Type:</span> {order.paymentType || "N/A"}</p>
-            <p><span className="font-bold">Method:</span> {order.cardEntryMethod || "N/A"}</p>
+            <p><span className="font-bold">Tendered:</span> ${order.cashTendered?.toFixed(2) || ""}</p>
+            <p><span className="font-bold">Change:</span> ${order.changeGiven?.toFixed(2) || ""}</p>
+            <p><span className="font-bold">Type:</span> {order.paymentType}</p>
+            <p><span className="font-bold">Method:</span> {order.cardEntryMethod || ""}</p>
           </div>
 
           {/* PICKUP TIME */}

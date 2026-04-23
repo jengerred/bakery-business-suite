@@ -183,9 +183,9 @@ export default function RecentOrders({ todayOrders }: { todayOrders: ManagerOrde
                   </summary>
                   <div className="mt-2 text-sm text-gray-700 pl-2">
                     <div>Type: {o.paymentType}</div>
-                    <div>Method: {o.cardEntryMethod || "N/A"}</div>
+                    <div>Method: {o.cardEntryMethod || ""}</div>
                     <div className="truncate w-48 text-[11px] text-gray-500">
-                      Stripe: {o.stripePaymentId || "None"}
+                      Stripe: {o.stripePaymentId || ""}
                     </div>
                   </div>
                 </details>
@@ -199,10 +199,10 @@ export default function RecentOrders({ todayOrders }: { todayOrders: ManagerOrde
                     <div>Subtotal: ${o.subtotal.toFixed(2)}</div>
                     <div>Tax: ${o.tax.toFixed(2)}</div>
                     <div className="text-green-600">
-                      Tendered: ${(o.cashTendered || 0).toFixed(2)}
+                      Tendered: ${(o.cashTendered?.toFixed(2)) || ""}
                     </div>
                     <div className="text-red-600">
-                      Change: ${(o.changeGiven || 0).toFixed(2)}
+                      Change: ${(o.changeGiven?.toFixed(2)) || ""} 
                     </div>
                   </div>
                 </details>

@@ -120,11 +120,11 @@ export default function CartDrawer({
       state: "MI",
       zip: method === "shipping" ? formData.zip : null,
       notes: method === "pickup" ? "Pickup order" : "Online shipping order",
-      paymentType: paymentType === "card" ? "card" : "pickup",
-      cardEntryMethod: paymentType === "card" ? "online" : "none",
+      paymentType: paymentType === "card" ? "card" : "unpaid",
+      cardEntryMethod: paymentType === "card" ? "online" : "",
       stripePaymentId: stripeId || "",
-      cashTendered: 0,
-      changeGiven: 0
+      cashTendered: null,
+      changeGiven: null
     };
 
     try {
@@ -251,7 +251,7 @@ export default function CartDrawer({
           {/* VIEW: METHODS */}
           {view === "methods" && (
             <div className="p-1">
-              <OrderSummary cart={cart} method={null} subtotal={subtotal} finalTotal={subtotal} onIncrement={onIncrement} onDecrement={onDecrement} onUpdateQuantity={onUpdateQuantity} onRemove={onRemove} />
+              <OrderSummary cart={cart} method={method} subtotal={subtotal} finalTotal={subtotal} onIncrement={onIncrement} onDecrement={onDecrement} onUpdateQuantity={onUpdateQuantity} onRemove={onRemove} />
               <div className="space-y-3 mt-4">
                 <div className="p-5 rounded-3xl border-2 border-violet-300/50 border-dashed bg-violet-100 shadow-inner">
                   <h3 className="mb-2 text-[11px] font-black uppercase tracking-[0.2em] text-violet-600">Pickup or Shipping?</h3>

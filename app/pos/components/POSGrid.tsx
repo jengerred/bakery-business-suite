@@ -320,7 +320,7 @@ export default function POSGrid({
 
  // ⭐ PICKUP ORDER FLOW
 if (pickupOrderId) {
-  // Update backend order status
+  // Update backend order status 
   const res = await fetch(
     `${process.env.NEXT_PUBLIC_API_URL}/api/orders/${pickupOrderId}/status`,
     {
@@ -329,8 +329,11 @@ if (pickupOrderId) {
       body: JSON.stringify({
         newStatus: "PickedUp",
         pickup_time: new Date().toISOString(),
-        cash_tendered: paymentData.cashTendered || 0,
-        change_given: paymentData.changeGiven || 0,
+        cash_tendered: paymentData.cashTendered || null,
+        change_given: paymentData.changeGiven || null,
+        card_entry_method: paymentData.cardEntryMethod || null,
+        stripe_payment_id: paymentData.stripePaymentId || null,
+        payment_type: paymentData.paymentType || null
       }),
     }
   );
@@ -400,7 +403,7 @@ if (pickupOrderId) {
       setLastOrder(savedOrder);
 
       if (paymentData.paymentType === "cash" || !customer) {
-        setReceiptMethod("none");
+        setReceiptMethod("print");
         window.dispatchEvent(new CustomEvent("reader-force-thank-you"));
       } else {
         setReceiptMethod(undefined);

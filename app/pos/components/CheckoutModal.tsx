@@ -30,7 +30,7 @@ type CheckoutModalProps = {
     subtotal: number;
     tax: number;
     total: number;
-    paymentType: "cash" | "credit" | "debit";
+    paymentType: "cash" | "credit" | "debit" | "pending";
     cardEntryMethod?: "manual" | "terminal" | "";
     cashTendered?: number;
     changeGiven?: number;
@@ -54,7 +54,7 @@ export default function CheckoutModal({
   order,
   terminal,
   forceReaderMode = false,
-  pickupOrderId,     // ⭐ NEW
+  pickupOrderId,     // Get Pickup Order data
   onClose,
   onComplete,
 }: CheckoutModalProps) {
@@ -64,6 +64,8 @@ export default function CheckoutModal({
 
   const [paymentType, setPaymentType] = useState<"cash" | "credit" | "debit" | "pending">("cash");
   const [cardEntryMethod, setCardEntryMethod] = useState<"manual" | "terminal">("manual");
+  const [stripePaymentId, setStripePaymentId] = useState("")
+
   const [cashTendered, setCashTendered] = useState("");
   const [loading, setLoading] = useState(false);
   const [readerStatus, setReaderStatus] = useState<string | null>(null);
@@ -106,16 +108,16 @@ export default function CheckoutModal({
     status: pickupOrderId ? "PickedUp" : "completed",
     fulfillmentType: pickupOrderId ? "pickup" : "POS",
     pickupTime: pickupOrderId ? new Date().toISOString() : "",
-    address: "In-Store",
-    city: "Grand Rapids",
+    address: "",
+    city: "",
     state: "MI",
     zip: "",
     notes: "",
     paymentType,
     cardEntryMethod,
+    stripePaymentId, 
     cashTendered: paymentType === "cash" ? Number(cashTendered) : null,
     changeGiven: paymentType === "cash" ? Number(cashTendered) - total : null,
-  
     };
 
 
@@ -213,7 +215,7 @@ export default function CheckoutModal({
       paymentType: "cash",
       cashTendered: Number(cashTendered),
       changeGiven: changeDue,
-      cardEntryMethod: "none",
+      cardEntryMethod: "",
     };
 
     window.dispatchEvent(new CustomEvent("reader-show-thank-you"));
@@ -231,7 +233,14 @@ export default function CheckoutModal({
         {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ newStatus: "paid" }),
+          body: JSON.stringify({ 
+            newStatus: "paid",  payment_type: payload.paymentType,
+            card_entry_method: payload.cardEntryMethod,
+            stripe_payment_id: payload.stripePaymentId,
+            cash_tendered: payload.cashTendered,
+            change_given: payload.changeGiven,
+            pickup_time: new Date().toISOString(),
+            }),
         }
       );
 

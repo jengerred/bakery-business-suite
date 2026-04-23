@@ -65,7 +65,7 @@ namespace BakeryBackend.Controllers
                 City = order.City,
                 State = order.State,
                 Zip = order.Zip,
-                Status = order.Status, 
+                Status = order.Status,
             };
 
             /* ---------------------------------------------------------
@@ -148,6 +148,15 @@ namespace BakeryBackend.Controllers
             if (dto.Change_Given.HasValue)
                 order.ChangeGiven = dto.Change_Given.Value;
 
+            if (!string.IsNullOrEmpty(dto.Payment_Type))
+                order.PaymentType = dto.Payment_Type;
+
+            if (!string.IsNullOrEmpty(dto.Card_Entry_Method))
+                order.CardEntryMethod = dto.Card_Entry_Method;
+
+            if (!string.IsNullOrEmpty(dto.Stripe_Payment_Id))
+                order.StripePaymentId = dto.Stripe_Payment_Id;    
+
             // Auto-set FulfilledAt for completed statuses
             if (dto.NewStatus == "Shipped" || dto.NewStatus == "PickedUp" || dto.NewStatus == "Completed")
             {
@@ -167,6 +176,9 @@ namespace BakeryBackend.Controllers
         public DateTime? Pickup_Time { get; set; }
         public decimal? Cash_Tendered { get; set; }
         public decimal? Change_Given { get; set; }
-    }
+        public string? Payment_Type { get; set; }
+        public string? Card_Entry_Method { get; set; }
+        public string? Stripe_Payment_Id { get; set; }
+        }
 
 }
