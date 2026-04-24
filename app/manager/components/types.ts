@@ -25,6 +25,8 @@ export type ManagerOrder = {
   status: string;
   fulfillmentType: string;
   pickupTime: string | null;
+  fulfilledAt?: string;
+
 
   // Address
   address: string | null;
