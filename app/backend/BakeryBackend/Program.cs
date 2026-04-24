@@ -20,7 +20,7 @@ builder.Services.AddControllers()
     });
 
 /* ---------------------------------------------------------
-   FIXED: Build NpgsqlDataSource ONCE (correct for Npgsql 8.x)
+  Build NpgsqlDataSource ONCE (correct for Npgsql 8.x)
    --------------------------------------------------------- */
 
 var dataSourceBuilder = new NpgsqlDataSourceBuilder(

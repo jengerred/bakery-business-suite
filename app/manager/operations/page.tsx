@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { FulfillmentCard } from "./components/FulfillmentCard";
+
 
 type Order = {
   id: string;
@@ -9,33 +11,35 @@ type Order = {
   status: string;
   fulfillmentType: string;
   createdAt: string;
-  items: any[];
-
+  items: {
+    quantity: number;
+    product: { name: string };
+  }[];
   // Shipping fields
   shippingCarrier?: string;
   trackingNumber?: string;
   labelUrl?: string;
   fulfilledAt?: string;
-
-  // Optional fields used in details panel
+  // Optional fields (kept for future use, but not central to this UI)
   customerEmail?: string;
   customerPhone?: string;
-  paymentType?: string;
-  cardEntryMethod?: string;
-  stripePaymentId?: string;
-  pickupTime?: string;
-  subtotal?: number;
-  tax?: number;
-  cashTendered?: number;
-  changeGiven?: number;
 };
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export default function OperationsPage() {
   const [orders, setOrders] = useState<Order[]>([]);
-  const [filter, setFilter] = useState("Pending Pickup");
-  const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
+  const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
 
-  const API_URL = process.env.NEXT_PUBLIC_API_URL;
+  // Collapsibles (all closed by default)
+  const [needsOpen, setNeedsOpen] = useState(false);
+  const [needsPickupOpen, setNeedsPickupOpen] = useState(false);
+  const [needsShippingOpen, setNeedsShippingOpen] = useState(false);
+  const [needsDeliveryOpen, setNeedsDeliveryOpen] = useState(false);
+
+  const [readyPickupOpen, setReadyPickupOpen] = useState(false);
+  const [readyShippingOpen, setReadyShippingOpen] = useState(false);
+  const [readyDeliveryOpen, setReadyDeliveryOpen] = useState(false);
 
   const loadOrders = async () => {
     try {
@@ -43,351 +47,491 @@ export default function OperationsPage() {
       const data = await res.json();
       setOrders(data);
     } catch (err) {
-      console.error("Sync error:", err);
+      console.error("Error loading orders:", err);
+    }
+  };
+
+  const updateOrder = async (id: string, payload: Record<string, any>) => {
+    try {
+      await fetch(`${API_URL}/api/orders/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      await loadOrders();
+    } catch (err) {
+      console.error("Error updating order:", err);
     }
   };
 
   useEffect(() => {
     loadOrders();
+    const interval = setInterval(loadOrders, 3000);
+    return () => clearInterval(interval);
   }, []);
 
-  const getFilteredOrders = () => {
-    return orders.filter((order) => {
-      const s = order.status?.toLowerCase() || "";
-      const t = order.fulfillmentType?.toLowerCase() || "";
+  // Filters
 
-      if (filter === "Pending Pickup") return t === "pickup" && s !== "pickedup";
-      if (filter === "Pending Shipping") return t === "shipping" && s !== "shipped";
-      if (filter === "POS") return t === "pos";
-      if (filter === "Completed") return ["shipped", "pickedup", "completed"].includes(s);
-      return true;
+  const needsPickup = orders.filter((o) => {
+    const t = o.fulfillmentType?.toLowerCase();
+    const s = o.status?.toLowerCase();
+    if (t !== "pickup") return false;
+    if (s === "ready" || s === "pickedup" || s === "completed") return false;
+    return true;
+  });
+
+  const needsShipping = orders.filter((o) => {
+    const t = o.fulfillmentType?.toLowerCase();
+    const s = o.status?.toLowerCase();
+    if (t !== "shipping") return false;
+    if (s === "ready") return false;
+    if (o.fulfilledAt) return false;
+    if (o.trackingNumber) return false;
+    return true;
+  });
+
+  const needsDelivery = orders.filter((o) => {
+    const t = o.fulfillmentType?.toLowerCase();
+    if (t !== "delivery") return false;
+    // Delivery not implemented yet; keep empty by design
+    return false;
+  });
+
+  const readyForPickup = orders.filter((o) => {
+    const t = o.fulfillmentType?.toLowerCase();
+    const s = o.status?.toLowerCase();
+    return t === "pickup" && s === "ready";
+  });
+
+  const readyToShip = orders.filter((o) => {
+    const t = o.fulfillmentType?.toLowerCase();
+    if (t !== "shipping") return false;
+    if (!o.trackingNumber) return false;
+    if (o.fulfilledAt) return false;
+    return true;
+  });
+
+  const readyForDelivery = orders.filter((o) => {
+    const t = o.fulfillmentType?.toLowerCase();
+    if (t !== "delivery") return false;
+    // Delivery not implemented yet; keep empty by design
+    return false;
+  });
+
+  // Actions
+
+  const handleMarkReadyPickup = (order: Order) => {
+    updateOrder(order.id, {
+      status: "Ready",
+      fulfilledAt: new Date().toISOString(),
     });
   };
 
-  const currentOrders = getFilteredOrders();
+  const handleMarkReadyShipping = (order: Order) => {
+    updateOrder(order.id, {
+      status: "Ready",
+    });
+  };
+
+  const handleMarkShipped = (order: Order) => {
+    updateOrder(order.id, {
+      fulfilledAt: new Date().toISOString(),
+    });
+  };
+
+  const [filledOpen, setFilledOpen] = useState(false);
+  const [modalOrder, setModalOrder] = useState<Order | null>(null);
+
+
 
   return (
     <div className="min-h-screen bg-stone-50 p-8 font-sans">
       <header className="max-w-7xl mx-auto mb-10 flex flex-col lg:flex-row justify-between items-end gap-6">
         <div>
           <h1 className="text-4xl font-black text-slate-900 uppercase tracking-tighter italic">
-            Command Center
+            Operations
           </h1>
           <p className="text-violet-600 font-bold uppercase tracking-widest text-xs mt-2">
-            Operations Dashboard
+            Fulfillment Dashboard
           </p>
         </div>
-
-        <div className="flex bg-stone-200 p-1 rounded-2xl border border-stone-300 overflow-x-auto max-w-full">
-          {["Pending Pickup", "Pending Shipping", "POS", "Completed"].map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setFilter(tab)}
-              className={`whitespace-nowrap px-4 py-2 rounded-xl font-black text-[10px] uppercase transition-all ${
-                filter === tab ? "bg-white text-violet-600 shadow-sm" : "text-stone-500"
-              }`}
-            >
-              {tab}
-            </button>
-          ))}
+        <div className="text-[11px] text-stone-500 uppercase tracking-[0.2em] font-black">
+          Fulfillment Only · No POS · No Payments
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto">
-        {filter === "Pending Pickup" ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-            {/* UNPAID PICKUP */}
-            <div>
-              <h2 className="text-red-600 font-black uppercase tracking-widest text-xs mb-6 px-4 flex items-center gap-2">
-                <span className="w-2 h-2 bg-red-600 rounded-full animate-pulse" /> Not Yet Paid
-              </h2>
-              <div className="space-y-6">
-                {currentOrders
-                  .filter(
-                    (o) =>
-                      o.status?.toLowerCase() === "unpaid" ||
-                      o.status?.toLowerCase() === "pending"
-                  )
-                  .map((order) => (
-                    <OrderCard
-                      key={order.id}
-                      order={order}
-                      expandedOrder={expandedOrder}
-                      setExpandedOrder={setExpandedOrder}
-                      showPrice={true}
-                    />
-                  ))}
-              </div>
-            </div>
+     <main className="max-w-7xl mx-auto space-y-0 md:space-y-6">
 
-            {/* PAID PICKUP */}
-            <div>
-              <h2 className="text-emerald-600 font-black uppercase tracking-widest text-xs mb-6 px-4 flex items-center gap-2">
-                <span className="w-2 h-2 bg-emerald-600 rounded-full" /> Paid & Ready
-              </h2>
-              <div className="space-y-6">
-                {currentOrders
-                  .filter((o) => o.status?.toLowerCase() === "paid")
-                  .map((order) => (
-                    <OrderCard
+       
+        {/* Needs Fulfillment (wrapper) */}
+      <section className="border -m-5 mb-4 md:mb-3 lg:mb-4 md:m-1 lg:m-1 rounded-3xl px-3 md:px-5 py-4 shadow-sm border-red-600 bg-amber-50">
+
+        <div className="text-left mb-4">
+          <h2 className="text-md font-black uppercase tracking-[0.2em] text-slate-800">
+            ⚠️ Needs Fulfillment
+          </h2>
+          <p className="text-xs text-stone-500 mt-1">
+            Orders that still need to be filled
+          </p>
+        </div>
+
+          <div className="space-y-4">
+            {/* Pickup subsection */}
+            <SubSection
+              title="Pickup"
+              count={needsPickup.length}
+              colorDotClass="bg-purple-500"
+              colorClass="border-purple-300 bg-purple-50"
+              open={needsPickupOpen}
+              onToggle={() => setNeedsPickupOpen((o) => !o)}
+              
+            >
+              {needsPickup.length === 0 ? (
+                <EmptyState label="No pickup orders need fulfillment." />
+              ) : (
+                 <div className="max-h-[600px] overflow-y-auto pt-3">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+                    {needsPickup.map((order) => (
+                    <FulfillmentCard
                       key={order.id}
                       order={order}
-                      expandedOrder={expandedOrder}
-                      setExpandedOrder={setExpandedOrder}
+                      variant="pickup"
+                      expanded={expandedOrderId === order.id}
+                      onToggleExpand={() =>
+                        setExpandedOrderId((id) =>
+                          id === order.id ? null : order.id
+                        )
+                      }
+                      primaryLabel="Mark Ready"
+                      onPrimaryAction={() => handleMarkReadyPickup(order)}
+                      onOpenModal={(order) => setModalOrder(order)}
+
                     />
                   ))}
-              </div>
-            </div>
+                </div>
+                </div>
+              )}
+            </SubSection>
+
+            {/* Shipping subsection */}
+            <SubSection
+              title="Shipping"
+              count={needsShipping.length}
+              colorDotClass="bg-blue-500"
+              colorClass="border-blue-300 bg-blue-50"
+              open={needsShippingOpen}
+              onToggle={() => setNeedsShippingOpen((o) => !o)}
+            >
+              {needsShipping.length === 0 ? (
+                <EmptyState label="No shipping orders need fulfillment." />
+              ) : (
+                  <div className="max-h-[600px] overflow-y-auto pt-5">
+                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+                     {needsShipping.map((order) => (
+                    <FulfillmentCard
+                      key={order.id}
+                      order={order}
+                      variant="shipping"
+                      expanded={expandedOrderId === order.id}
+                      onToggleExpand={() =>
+                        setExpandedOrderId((id) =>
+                          id === order.id ? null : order.id
+                        )
+                      }
+                      primaryLabel="Mark Ready"
+                      onPrimaryAction={() => handleMarkReadyShipping(order)}
+                      onOpenModal={(order) => setModalOrder(order)}
+
+                    />
+                  ))}
+                </div>
+                </div>
+              )}
+            </SubSection>
+
+            {/* Delivery subsection (future) */}
+            <SubSection
+              title="Delivery"
+              count={needsDelivery.length}
+              colorDotClass="bg-emerald-500"
+              colorClass="border-emerald-300 bg-emerald-50"
+              open={needsDeliveryOpen}
+              onToggle={() => setNeedsDeliveryOpen((o) => !o)}
+            >
+              <EmptyState label="Delivery workflow coming soon." />
+            </SubSection>
           </div>
-        ) : (
-          /* OTHER FILTERS */
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {currentOrders.map((order) => (
-              <OrderCard
-                key={order.id}
-                order={order}
-                expandedOrder={expandedOrder}
-                setExpandedOrder={setExpandedOrder}
-                isArchivedView={filter === "Completed"}
-              />
-            ))}
+        </section>
+      
+
+        <div className="-m-5 mb-4 mt-2  md:mb-3 lg:mb-4 md:m-1 lg:m-1">
+          
+        <Section
+          title="✔️ Filled Orders"
+          subtitle="Orders that are ready for pickup, shipping, or delivery"
+          colorClass="border-green-400 bg-stone-100"
+          open={filledOpen}
+          onToggle={() => setFilledOpen((o) => !o)}
+          titleSize="md"
+        >
+
+        {/* Ready for Pickup */}
+        <div className="mb-2">
+        <Section
+          title="Ready for Pickup"
+          subtitle="Orders that are filled and waiting for customers"
+          colorClass="border-purple-300 bg-purple-50"
+          open={readyPickupOpen}
+          onToggle={() => setReadyPickupOpen((o) => !o)}
+        >
+          {readyForPickup.length === 0 ? (
+            <EmptyState label="No pickup orders are ready yet." />
+          ) : (
+            <div className="max-h-[600px] overflow-y-auto pt-3">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+              {readyForPickup.map((order) => (
+                <FulfillmentCard
+                  key={order.id}
+                  order={order}
+                  variant="pickup"
+                  expanded={expandedOrderId === order.id}
+                  onToggleExpand={() =>
+                    setExpandedOrderId((id) =>
+                      id === order.id ? null : order.id
+                    )
+                  }
+                  primaryLabel="Ready"
+                  primaryDisabled
+                  onOpenModal={(order) => setModalOrder(order)}
+                />
+              ))}
+            </div>
+            </div>
+          )}
+        </Section>
+        </div>
+
+        {/* Ready to Ship */}
+         <div className="mb-2">
+        <Section
+          title="Ready to Ship"
+          subtitle="Packed, labeled, and waiting to be handed to the carrier"
+          colorClass="border-blue-300 bg-blue-50"
+          open={readyShippingOpen}
+          onToggle={() => setReadyShippingOpen((o) => !o)}
+        >
+          {readyToShip.length === 0 ? (
+            <EmptyState label="No shipping orders are ready to ship." />
+          ) : (
+            <div className="max-h-[600px] overflow-y-auto pr-1 pt-3">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+                {readyToShip.map((order) => (
+                <FulfillmentCard
+                  key={order.id}
+                  order={order}
+                  variant="shipping"
+                  expanded={expandedOrderId === order.id}
+                  onToggleExpand={() =>
+                    setExpandedOrderId((id) =>
+                      id === order.id ? null : order.id
+                    )
+                  }
+                  primaryLabel="Mark Shipped"
+                  onPrimaryAction={() => handleMarkShipped(order)}
+                  onOpenModal={(order) => setModalOrder(order)}
+                />
+              ))}
+            </div>
+            </div>
+          )}
+        </Section>
+        </div>
+
+        {/* Ready for Delivery (future) */}
+         <div className="mb-2">
+        <Section
+          title="Ready for Delivery"
+          subtitle="Delivery workflow coming soon"
+          colorClass="border-emerald-300 bg-emerald-50"
+          open={readyDeliveryOpen}
+          onToggle={() => setReadyDeliveryOpen((o) => !o)}
+        >
+          {readyForDelivery.length === 0 ? (
+            <EmptyState label="Delivery workflow coming soon." />
+          ) : (
+              <div className="max-h-[600px] overflow-y-auto pr-1 pt-3">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+                  {readyForDelivery.map((order) => (
+                <FulfillmentCard
+                  key={order.id}
+                  order={order}
+                  variant="delivery"
+                  expanded={expandedOrderId === order.id}
+                  onToggleExpand={() =>
+                    setExpandedOrderId((id) =>
+                      id === order.id ? null : order.id
+                    )
+                  }
+                  primaryLabel="Mark Out for Delivery"
+                  primaryDisabled
+                  onOpenModal={(order) => setModalOrder(order)}
+                />
+              ))}
+            </div>
+            </div>
+          )}
+        </Section>
+        </div>
+        </Section>
+         </div>
+         {modalOrder && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+            <div className="bg-white rounded-3xl p-6 w-[90%] max-w-lg shadow-xl relative">
+
+              <button
+                onClick={() => setModalOrder(null)}
+                className="absolute top-3 right-3 text-stone-400 hover:text-stone-600 text-xl"
+              >
+                ✕
+              </button>
+
+              <h2 className="text-xl font-black mb-4">
+                Order #{modalOrder.id.slice(-4).toUpperCase()}
+              </h2>
+
+              <div className="space-y-2 mb-4">
+                {modalOrder.items.map((item, i) => (
+                  <p key={i} className="text-sm font-bold text-stone-700">
+                    <span className="text-violet-600">{item.quantity}x</span>{" "}
+                    {item.product.name}
+                  </p>
+                ))}
+              </div>
+
+              <p className="text-sm text-stone-600 mb-2">
+                <span className="font-bold">Status:</span> {modalOrder.status}
+              </p>
+
+              <p className="text-sm text-stone-600">
+                <span className="font-bold">Created:</span>{" "}
+                {new Date(modalOrder.createdAt).toLocaleString()}
+              </p>
+
+            </div>
           </div>
         )}
+
       </main>
     </div>
   );
 }
 
-function getPrimaryActionLabel(order: any) {
-  const s = order.status?.toLowerCase();
-  const t = order.fulfillmentType?.toLowerCase();
+// Generic section (Manager-style collapsible)
+type SectionProps = {
+  title: string;
+  subtitle?: string;
+  colorClass: string;
+  open: boolean;
+ onToggle?: () => void;
+ titleSize?: "sm" | "md" | "lg";
+  children: React.ReactNode;
+};
 
-  const isUnpaid = s === "unpaid" || s === "pending";
-
-  // Shipping workflow
-  if (t === "shipping") {
-    if (isUnpaid) return "Collect Payment";
-    if (!order.trackingNumber) return "Enter Shipping Details";
-    if (order.trackingNumber && !order.fulfilledAt) return "Mark as Shipped";
-    if (order.fulfilledAt || s === "shipped") return "Shipped";
-    return "Update Shipping";
-  }
-
-  // Pickup workflow
-  if (t === "pickup") {
-    if (isUnpaid) return "Collect Payment";
-    if (s === "paid" && !order.pickupTime) return "Mark as Picked Up";
-    if (order.pickupTime || s === "pickedup") return "Picked Up";
-    return "Update Pickup";
-  }
-
-  // POS workflow
-  if (t === "pos") {
-    if (isUnpaid) return "Collect Payment";
-    return "Completed";
-  }
-
-  return "Update";
-}
-
-function handlePrimaryAction(order: any) {
-  const label = getPrimaryActionLabel(order);
-  // Placeholder for now – wire to real endpoints later
-  console.log("Primary action clicked:", label, "for order", order.id);
-}
-
-function OrderCard({
-  order,
-  expandedOrder,
-  setExpandedOrder,
-  isArchivedView,
-  showPrice,
-}: any) {
-  const s = order.status?.toLowerCase();
-  const t = order.fulfillmentType?.toLowerCase();
-
-  let themeClass = "bg-purple-600";
-  if (t === "shipping") themeClass = "bg-blue-600";
-  if (t === "pos" || s === "completed" || s === "pickedup" || s === "shipped") {
-    themeClass = "bg-emerald-500";
-  }
-
-  const isUnpaid = s === "unpaid" || s === "pending";
-  const isPOS = t === "pos";
-
-  const primaryLabel = getPrimaryActionLabel(order);
+function Section({ title, subtitle, colorClass, titleSize, open, onToggle, children }: SectionProps) {
+ 
+  const sizeClass =
+    titleSize === "lg"
+      ? "text-xl"
+      : titleSize === "md"
+      ? "text-base"
+      : "text-xs"; // default
 
   return (
-    <div
-      className={`group bg-white border-2 border-stone-200 rounded-[2.5rem] p-6 transition-all duration-300 ${
-        isArchivedView
-          ? "opacity-40 grayscale-[0.6] hover:opacity-100 hover:grayscale-0 hover:shadow-xl hover:border-emerald-100"
-          : "shadow-sm hover:shadow-xl"
-      }`}
+    <section
+      className={`border rounded-3xl px-5 py-4 shadow-sm transition-all ${colorClass}`}
     >
-      {/* HEADER */}
-      <div className="flex justify-between items-start mb-4">
-        <span
-          className={`px-3 py-1 rounded-full text-[9px] font-black uppercase text-white ${themeClass}`}
-        >
-          {order.fulfillmentType || "POS"}
-        </span>
-        <span className="text-stone-300 font-mono text-[10px]">
-          #{order.id?.slice(0, 8)}
-        </span>
-      </div>
-
-      {/* NAME + PRICE */}
-      <div className="flex justify-between items-start mb-4">
-        <h3 className="text-2xl font-black text-slate-900 uppercase italic leading-none">
-          {order.customerName || "Walk-in"}
-        </h3>
-        {showPrice && (
-          <span className="text-red-600 font-black text-lg tracking-tighter">
-            ${order.total.toFixed(2)}
-          </span>
-        )}
-      </div>
-
-      {/* ITEMS */}
-      <div className="mb-6">
-        {order.items
-          ?.slice(0, expandedOrder === order.id ? 99 : 1)
-          .map((item: any, i: number) => (
-            <p key={i} className="text-sm font-bold text-stone-600 py-1">
-              <span className="text-violet-600">{item.quantity}x</span>{" "}
-              {item.product.name}
-            </p>
-          ))}
-      </div>
-
-      {/* DETAILS PANEL */}
-      {expandedOrder === order.id && (
-        <div className="mt-4 space-y-4 text-sm text-stone-600">
-          {/* CUSTOMER */}
-          <div className="bg-stone-100 p-4 rounded-2xl">
-            <h4 className="font-black text-stone-800 text-xs uppercase tracking-widest mb-2">
-              Customer Details
-            </h4>
-            <p>
-              <span className="font-bold">Name:</span>{" "}
-              {order.customerName || "N/A"}
-            </p>
-            <p>
-              <span className="font-bold">Email:</span>{" "}
-              {order.customerEmail || "N/A"}
-            </p>
-            <p>
-              <span className="font-bold">Phone:</span>{" "}
-              {order.customerPhone || "N/A"}
-            </p>
-          </div>
-
-          {/* PAYMENT */}
-          <div className="bg-stone-100 p-4 rounded-2xl">
-            <h4 className="font-black text-stone-800 text-xs uppercase tracking-widest mb-2">
-              Payment Details
-            </h4>
-            <p>
-              <span className="font-bold">Status:</span> {order.status}
-            </p>
-            <p>
-              <span className="font-bold">Type:</span>{" "}
-              {order.paymentType || ""}
-            </p>
-            <p>
-              <span className="font-bold">Method:</span>{" "}
-              {order.cardEntryMethod || ""}
-            </p>
-            <p className="truncate">
-              <span className="font-bold">Stripe:</span>{" "}
-              {order.stripePaymentId || ""}
-            </p>
-          </div>
-
-          {/* FULFILLMENT */}
-          <div className="bg-stone-100 p-4 rounded-2xl">
-            <h4 className="font-black text-stone-800 text-xs uppercase tracking-widest mb-2">
-              Fulfillment
-            </h4>
-            <p>
-              <span className="font-bold">Type:</span>{" "}
-              {order.fulfillmentType}
-            </p>
-            <p>
-              <span className="font-bold">Created:</span>{" "}
-              {new Date(order.createdAt).toLocaleString()}
-            </p>
-            {order.pickupTime && (
-              <p>
-                <span className="font-bold">Picked Up:</span>{" "}
-                {new Date(order.pickupTime).toLocaleString()}
-              </p>
-            )}
-            {order.fulfilledAt && (
-              <p>
-                <span className="font-bold">Fulfilled:</span>{" "}
-                {new Date(order.fulfilledAt).toLocaleString()}
-              </p>
-            )}
-            {order.trackingNumber && (
-              <p>
-                <span className="font-bold">Tracking #:</span>{" "}
-                {order.trackingNumber}
-              </p>
-            )}
-            {order.shippingCarrier && (
-              <p>
-                <span className="font-bold">Carrier:</span>{" "}
-                {order.shippingCarrier}
-              </p>
-            )}
-          </div>
-
-          {/* ACCOUNTING */}
-          <div className="bg-stone-100 p-4 rounded-2xl">
-            <h4 className="font-black text-stone-800 text-xs uppercase tracking-widest mb-2">
-              Accounting
-            </h4>
-            <p>
-              <span className="font-bold">Subtotal:</span> $
-              {order.subtotal?.toFixed(2)}
-            </p>
-            <p>
-              <span className="font-bold">Tax:</span> $
-              {order.tax?.toFixed(2)}
-            </p>
-            <p>
-              <span className="font-bold">Tendered:</span> $
-              {(order.cashTendered).toFixed(2) || ""}
-            </p>
-            <p>
-              <span className="font-bold">Change:</span> $
-              {(order.changeGiven).toFixed(2) || ""}
-            </p>
-          </div>
+      <button
+        type="button"
+        onClick={onToggle}
+        className="w-full flex items-center justify-between gap-4"
+      >
+        <div className="text-left">
+           <h2 className={`${sizeClass} font-black uppercase tracking-[0.2em] text-slate-800`}>
+            {title}
+          </h2>
+          {subtitle && (
+            <p className="text-xs text-stone-500 mt-1">{subtitle}</p>
+          )}
+          
         </div>
-      )}
-
-      {/* PRIMARY ACTION BUTTON (shipping/pickup/POS aware) */}
-      <button
-        onClick={() => handlePrimaryAction(order)}
-        className={`w-full p-4 rounded-2xl text-white mb-3 text-center transition-all font-black text-[10px] uppercase tracking-[0.2em] ${
-          isUnpaid ? "bg-red-600" : themeClass
-        }`}
-      >
-        {primaryLabel}
+        <Chevron open={open} />
       </button>
+      {open && <div className="mt-4">{children}</div>}
+    </section>
+  );
+}
 
-      {/* EXPAND BUTTON */}
+// Subsection inside Needs Fulfillment
+type SubSectionProps = {
+  title: string;
+  count: number;
+  colorDotClass: string;
+  colorClass: string;
+  open: boolean;
+  onToggle: () => void;
+  children: React.ReactNode;
+};
+
+function SubSection({
+  title,
+  count,
+  colorDotClass,
+  colorClass,
+  open,
+  onToggle,
+  children,
+}: SubSectionProps) {
+  return (
+    <div className={`border rounded-2xl ${colorClass}`}>
       <button
-        onClick={() =>
-          setExpandedOrder(expandedOrder === order.id ? null : order.id)
-        }
-        className="w-full py-3 border-2 border-stone-100 text-stone-400 font-black uppercase text-[10px] rounded-2xl hover:bg-stone-50 transition-colors"
+        type="button"
+        onClick={onToggle}
+        className="w-full flex items-center justify-between px-4 py-3"
       >
-        {expandedOrder === order.id ? "Hide Details" : "View Details"}
+        <div className="flex items-center gap-2">
+          <span className={`w-2 h-2 rounded-full ${colorDotClass}`} />
+          <span className="text-sm font-black uppercase tracking-[0.2em] text-slate-700">
+            {title}
+          </span>
+          <span className="text-xs text-red-700 font-mono">
+           ({count} order{count === 1 ? "" : "s"})
+          </span>
+        </div>
+        <Chevron open={open} />
       </button>
+      {open && <div className="px-4 pb-4 pt-1">{children}</div>}
     </div>
   );
 }
+
+function Chevron({ open }: { open: boolean }) {
+  return (
+    <span
+      className={`transition-transform duration-200 text-stone-400 ${
+        open ? "rotate-180" : "rotate-0"
+      }`}
+    >
+      ▼
+    </span>
+  );
+}
+
+function EmptyState({ label }: { label: string }) {
+  return (
+    <div className="text-xs text-stone-400 italic py-3 px-1">
+      {label}
+    </div>
+  );
+}
+
+

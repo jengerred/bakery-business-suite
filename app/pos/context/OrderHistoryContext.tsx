@@ -77,7 +77,7 @@ export function OrderHistoryProvider({ children }: { children: React.ReactNode }
   }, [API]);
 
   /* -------------------------------------------------------
-     ➕ Add order (FIXED: Uses DTO Wrapper)
+     ➕ Add order (Uses DTO Wrapper)
      ------------------------------------------------------- */
   const addOrder = async (order: CompletedOrder) => {
     try {
@@ -97,9 +97,9 @@ export function OrderHistoryProvider({ children }: { children: React.ReactNode }
 
           // Payment Details
           PaymentType: order.paymentType,
-          CardEntryMethod: order.cardEntryMethod || "none",
-          CashTendered: Number(order.cashTendered) || 0,
-          ChangeGiven: Number(order.changeGiven) || 0,
+          CardEntryMethod: order.cardEntryMethod || "",
+          CashTendered: Number(order.cashTendered) || null,
+          ChangeGiven: Number(order.changeGiven) || null,
           StripePaymentId: order.stripePaymentId || "",
 
           // Customer Info
