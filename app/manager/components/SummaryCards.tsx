@@ -25,8 +25,8 @@ export default function SummaryCards({
     <div className="grid grid-cols-3 gap-4">
       {/* Total Sales */}
       <div className="p-4 bg-white shadow rounded">
-        <h2 className="text-sm text-gray-500">Total Sales (Today)</h2>
-        <p className="text-2xl font-semibold">${totalSales.toFixed(2)}</p>
+        <h2 className="text-sm text-emerald-500">Total Sales (Today)</h2>
+        <p className="text-2xl text-emerald-500 font-semibold">${totalSales.toFixed(2)}</p>
       </div>
 
       {/* Total Orders */}
