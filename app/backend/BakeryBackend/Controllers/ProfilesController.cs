@@ -68,6 +68,8 @@ namespace BakeryBackend.Controllers
             profile.Address = updatedUser.Address;
             profile.City = updatedUser.City;
             profile.Zip = updatedUser.Zip;
+            profile.Role = updatedUser.Role ?? profile.Role;
+
 
             try
             {
@@ -96,6 +98,7 @@ namespace BakeryBackend.Controllers
                     Name = dto.Name ?? "New Customer",
                     Phone = dto.Phone,
                     Email = dto.Email,
+                    Role = dto.Role ?? "customer",
                     LoyaltyPoints = 0
                 };
 

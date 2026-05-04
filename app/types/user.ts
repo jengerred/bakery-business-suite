@@ -18,13 +18,23 @@
 
 export type User = {
   id: string;               // Unique user ID from backend
+
+  // user info
   name?: string;            // Optional full name
   phone?: string;           // Optional phone number (POS lookup)
   email?: string;           // Optional email for login + receipts
   password?: string | null; // Optional hashed password (null for quick signups)
   loyaltyPoints: number;    // Loyalty balance for rewards system
+
+   // Address (optional)
   address?: string;         // Optional street address
   city?: string;            // Optional city
   zip?: string;             // Optional ZIP code
+
+  // Timestamp
+  createdAt?: string;
+
+  // ⭐ Role determines behavior
+  role: "customer" | "employee" | "manager" | "admin";
 
 };

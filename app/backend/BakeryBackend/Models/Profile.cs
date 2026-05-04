@@ -30,5 +30,9 @@ namespace BakeryBackend.Models
         [Column("zip")]
         public string? Zip { get; set; }
 
+        [Column("role")]
+        public string Role { get; set; } = "customer";
+
+
     }
 }

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import RecentOrders from "./components/RecentOrders";
-import { ManagerOrder } from "./components/types";
+import { ManagerOrder } from "../types/order";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -304,7 +304,7 @@ export default function ManagerDashboard() {
 
       {/* RECENT ORDERS */}
       <div className="p-6 bg-white rounded-3xl shadow border border-violet-300 mb-10">
-        <RecentOrders todayOrders={filteredOrders} />
+        <RecentOrders />
       </div>
     </div>
   );

@@ -1,5 +1,3 @@
-// components/operations/FulfillmentCard.tsx
-
 import React from "react";
 
 type Order = {

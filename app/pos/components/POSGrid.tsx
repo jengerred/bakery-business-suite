@@ -122,6 +122,7 @@ export default function POSGrid({
         email: orderData.customerEmail || "",
         phone: orderData.customerPhone || "",
         loyaltyPoints: 0,
+        role: "customer"
       });
 
     } catch (err) {

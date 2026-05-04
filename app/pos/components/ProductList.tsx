@@ -85,8 +85,15 @@ function POSFlavorCard({
   const [isDozen, setIsDozen] = useState(false);
   const activeProduct = isDozen ? dozen : single;
 
-  const isSoldOut = activeProduct.trackInventory && activeProduct.stockQuantity <= 0;
-  const isLowStock = activeProduct.trackInventory && activeProduct.stockQuantity > 0 && activeProduct.stockQuantity <= 5;
+  const isSoldOut =
+    activeProduct.trackInventory === true &&
+    (activeProduct.stockQuantity ?? 0) <= 0;
+
+  const isLowStock =
+    activeProduct.trackInventory === true &&
+    (activeProduct.stockQuantity ?? 0) > 0 &&
+    (activeProduct.stockQuantity ?? 0) <= 5;
+    
   const savings = Math.round((1 - dozen.price / (single.price * 12)) * 100);
 
   return (

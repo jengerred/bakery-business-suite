@@ -26,9 +26,15 @@ export default function ShopProductCard({
   );
 
   // ✅ Inventory & Urgency Logic
-  const isSoldOut = activeProduct.trackInventory && activeProduct.stockQuantity <= 0;
-  const isLowStock = activeProduct.trackInventory && activeProduct.stockQuantity > 0 && activeProduct.stockQuantity <= 5;
-  
+  const isSoldOut =
+    activeProduct.trackInventory === true &&
+    (activeProduct.stockQuantity ?? 0) <= 0;
+
+  const isLowStock =
+    activeProduct.trackInventory === true &&
+    (activeProduct.stockQuantity ?? 0) > 0 &&
+    (activeProduct.stockQuantity ?? 0) <= 5;
+
   return (
     <div className={`group relative flex flex-col bg-violet-400/50 border-2 border-violet-400 rounded-[2rem] overflow-hidden transition-all duration-500 
     hover:border-violet-600 hover:bg-violet-100/50 hover:shadow-[0_0_40px_8px_rgba(167,139,250,0.6)] ${isSoldOut ? 'grayscale-[0.5] opacity-80' : ''}`}>
