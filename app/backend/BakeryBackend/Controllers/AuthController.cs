@@ -61,7 +61,7 @@ namespace BakeryBackend.Controllers
         // ---------------------------------------------------------
         // GET CURRENT USER
         // ---------------------------------------------------------
-        [Authorize]
+        // [Authorize]
         [HttpGet("me")]
         public async Task<IActionResult> Me()
         {
@@ -86,7 +86,7 @@ namespace BakeryBackend.Controllers
         // ---------------------------------------------------------
         // SET PIN (Manager/Admin Only)
         // ---------------------------------------------------------
-        [Authorize(Roles = "manager,admin")]
+       // [Authorize(Roles = "manager,admin")]
         [HttpPost("set-pin")]
         public async Task<IActionResult> SetPin([FromBody] SetPinRequest request)
         {
