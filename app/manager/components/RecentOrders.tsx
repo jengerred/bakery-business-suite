@@ -2,28 +2,30 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useOrders } from "../hooks/useOrders";
+import { useOrders } from "../../pos/hooks/useOrders";
 import type { ManagerOrder } from "../../types/order";
+import OrderDetails from "../../components/OrderDetails";
 
-export default function RecentOrders() {
+export default function RecentOrders({ dateFilter }: { dateFilter: string }) {
   const router = useRouter();
 
   /* -------------------------------------------------------
-     UI STATE (unchanged)
+     UI STATE
   -------------------------------------------------------- */
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
+
   const [open, setOpen] = useState({
-    unfilled: true,
-    POS: true,
-    pickup: true,
-    shipping: true,
-    delivery: true,
+    unfilled: false,
+    POS: false,
+    pickup: false,
+    shipping: false,
+    delivery: false,
   });
 
   /* -------------------------------------------------------
      UNIFIED ORDER ENGINE
   -------------------------------------------------------- */
-  const { loading, sorted, byFulfillment, byStatus } = useOrders();
+  const { loading, sorted, byFulfillment } = useOrders();
 
   if (loading) {
     return (
@@ -34,54 +36,105 @@ export default function RecentOrders() {
   }
 
   /* -------------------------------------------------------
-     DATA SOURCES (replacing all manual logic)
+     DATE FILTER LOGIC
   -------------------------------------------------------- */
+  const filterByDate = (order: ManagerOrder) => {
+    const created = new Date(order.createdAt);
+    const now = new Date();
 
-  // Sorted newest-first list
-  const allOrders = sorted.newest;
+    if (dateFilter === "today") {
+      return created.toDateString() === now.toDateString();
+    }
 
-  // Fulfillment groups
-  const groups = {
-    POS: byFulfillment.pos.all,
-    pickup: byFulfillment.pickup.all,
-    shipping: byFulfillment.shipping.all,
-    delivery: byFulfillment.delivery.all,
+    if (dateFilter === "yesterday") {
+      const yesterday = new Date();
+      yesterday.setDate(now.getDate() - 1);
+      return created.toDateString() === yesterday.toDateString();
+    }
+
+    if (dateFilter === "7") {
+      const diff =
+        (now.getTime() - created.getTime()) / (1000 * 60 * 60 * 24);
+      return diff <= 7;
+    }
+
+    if (dateFilter === "30") {
+      const diff =
+        (now.getTime() - created.getTime()) / (1000 * 60 * 60 * 24);
+      return diff <= 30;
+    }
+
+    return true; // "all"
   };
 
-  // Unfulfilled logic (same UI, new source)
-  const unfilledPickup = byFulfillment.pickup.needs;
-  const unfilledShipping = byFulfillment.shipping.needs;
-  const unfilledDelivery = byFulfillment.delivery.needs;
+  /* -------------------------------------------------------
+     APPLY DATE FILTER TO ALL ORDER GROUPS
+  -------------------------------------------------------- */
+  const allOrders = sorted.newest.filter(filterByDate);
+
+  const groups = {
+    POS: byFulfillment.pos.all.filter(filterByDate),
+    pickup: byFulfillment.pickup.all.filter(filterByDate),
+    shipping: byFulfillment.shipping.all.filter(filterByDate),
+    delivery: byFulfillment.delivery.all.filter(filterByDate),
+  };
+
+  const unfilledPickup = byFulfillment.pickup.needs.filter(filterByDate);
+  const unfilledShipping = byFulfillment.shipping.needs.filter(filterByDate);
+  const unfilledDelivery = byFulfillment.delivery.needs.filter(filterByDate);
 
   const unfilledCount =
     unfilledPickup.length +
     unfilledShipping.length +
     unfilledDelivery.length;
 
-  // Ready / Completed logic
-  const pickupReady = byFulfillment.pickup.ready;
-  const pickupCompleted = byFulfillment.pickup.completed;
+  const pickupReady = byFulfillment.pickup.ready.filter(filterByDate);
+  const pickupCompleted = byFulfillment.pickup.completed.filter(filterByDate);
 
-  const shippingReady = byFulfillment.shipping.readyToPack;
-  const shippingShipped = byFulfillment.shipping.shipped;
+  const shippingReady =
+    byFulfillment.shipping.readyToPack.filter(filterByDate);
+  const shippingShipped =
+    byFulfillment.shipping.shipped.filter(filterByDate);
 
-  const deliveryReady = byFulfillment.delivery.ready;
-  const deliveryTracking = byFulfillment.delivery.outForDelivery;
-  const deliveryDelivered = byFulfillment.delivery.delivered;
+  const deliveryReady = byFulfillment.delivery.ready.filter(filterByDate);
+  const deliveryTracking =
+    byFulfillment.delivery.outForDelivery.filter(filterByDate);
+  const deliveryDelivered =
+    byFulfillment.delivery.delivered.filter(filterByDate);
 
   /* -------------------------------------------------------
-     COLORS (unchanged)
+     COLORS
   -------------------------------------------------------- */
   const COLORS = {
-    unfilled: { border: "border-red-600", bg: "bg-yellow-100/50", text: "text-red-800" },
-    POS: { border: "border-pink-400", bg: "bg-pink-100/40", text: "text-pink-600" },
-    pickup: { border: "border-purple-300", bg: "bg-purple-100/40", text: "text-purple-800" },
-    shipping: { border: "border-blue-400", bg: "bg-blue-100/40", text: "text-blue-800" },
-    delivery: { border: "border-orange-400", bg: "bg-orange-100/50", text: "text-orange-600" },
+    unfilled: {
+      border: "border-red-600",
+      bg: "bg-yellow-100/50",
+      text: "text-red-800",
+    },
+    POS: {
+      border: "border-pink-400",
+      bg: "bg-pink-100/40",
+      text: "text-pink-600",
+    },
+    pickup: {
+      border: "border-purple-300",
+      bg: "bg-purple-100/40",
+      text: "text-purple-800",
+    },
+    shipping: {
+      border: "border-blue-400",
+      bg: "bg-blue-100/40",
+      text: "text-blue-800",
+    },
+    delivery: {
+      border: "border-orange-400",
+      bg: "bg-orange-100/50",
+      text: "text-orange-600",
+    },
   };
 
   /* -------------------------------------------------------
-     CARD COMPONENT (unchanged)
+     CARD COMPONENT (WITH ORDER DETAILS)
   -------------------------------------------------------- */
   const Card = (o: ManagerOrder) => {
     const expanded = expandedOrder === o.id;
@@ -97,12 +150,13 @@ export default function RecentOrders() {
     return (
       <div
         key={o.id}
-        className={`min-w-[280px] bg-white border-2 ${theme} rounded-3xl p-5 shadow-sm hover:shadow-xl hover:-translate-y-2 transition-all duration-300`}
+        className={`bg-white border-2 ${theme} rounded-3xl p-5 mt-2 shadow-sm hover:shadow-xl hover:-translate-y-2 transition-all duration-300`}
       >
         <div className="flex justify-between items-start mb-3">
           <h3 className="text-lg font-black uppercase text-slate-900 leading-none">
             {o.customerName || "GUEST"}
           </h3>
+
           <span className="text-sm font-black text-violet-600">
             #{o.id.slice(-4).toUpperCase()}
           </span>
@@ -117,7 +171,10 @@ export default function RecentOrders() {
               minute: "2-digit",
             })}
           </p>
-          <p className="text-lg font-black text-slate-900">${o.total.toFixed(2)}</p>
+
+          <p className="text-lg font-black text-slate-900">
+            ${o.total.toFixed(2)}
+          </p>
         </div>
 
         <div className="mb-4 -mt-2">
@@ -129,18 +186,26 @@ export default function RecentOrders() {
           ))}
         </div>
 
+        {/* Toggle */}
         <button
           onClick={() => setExpandedOrder(expanded ? null : o.id)}
           className="w-full py-2.5 border-2 border-stone-200 text-stone-500 font-black uppercase text-[10px] rounded-xl hover:bg-stone-50 transition-all mt-2"
         >
           {expanded ? "Hide Details" : "View Details"}
         </button>
+
+        {/* Shared Order Details */}
+        {expanded && (
+          <div className="mt-4">
+            <OrderDetails order={o} />
+          </div>
+        )}
       </div>
     );
   };
 
   /* -------------------------------------------------------
-     SUBSECTION RENDERER (unchanged)
+     SUBSECTION RENDERER (VERTICAL GRID)
   -------------------------------------------------------- */
   const renderSubsection = (
     label: string,
@@ -149,7 +214,9 @@ export default function RecentOrders() {
     sectionBorder: string
   ) => (
     <div className="mb-6">
-      <div className={`border-4 rounded-3xl p-4 bg-white/50 ${sectionBorder}`}>
+      <div
+        className={`border-4 rounded-3xl p-4 bg-white/50 ${sectionBorder}`}
+      >
         <h4
           className={`text-[11px] font-black uppercase tracking-[0.2em] mb-4 px-2 py-1 inline-block rounded-lg ${textColor}`}
         >
@@ -157,18 +224,32 @@ export default function RecentOrders() {
         </h4>
 
         {orders.length > 0 ? (
-          <div className="flex gap-6 overflow-x-auto pt-2 pb-2 scrollbar-hide">
+          <div
+            className="
+              grid
+              grid-cols-1
+              sm:grid-cols-2
+              md:grid-cols-3
+              lg:grid-cols-4
+              gap-4
+              overflow-y-auto
+              max-h-[500px]
+              pr-2
+            "
+          >
             {orders.map(Card)}
           </div>
         ) : (
-          <p className="text-xs text-stone-400 italic px-2 pb-2">No orders</p>
+          <p className="text-xs text-stone-400 italic px-2 pb-2">
+            No orders
+          </p>
         )}
       </div>
     </div>
   );
 
   /* -------------------------------------------------------
-     UI (unchanged)
+     UI
   -------------------------------------------------------- */
   return (
     <div className="space-y-8">
@@ -240,7 +321,19 @@ export default function RecentOrders() {
           </button>
 
           {open.POS && (
-            <div className="flex gap-6 overflow-x-auto pt-4 pb-4 px-1">
+            <div
+              className="
+                grid
+                grid-cols-1
+                sm:grid-cols-2
+                md:grid-cols-3
+                lg:grid-cols-4
+                gap-4
+                overflow-y-auto
+                max-h-[500px]
+                pr-2
+              "
+            >
               {groups.POS.map(Card)}
             </div>
           )}

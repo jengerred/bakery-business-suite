@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useOrders } from "../hooks/useOrders";
 import { FulfillmentCard } from "./components/FulfillmentCard";
+import POSNav from "../components/POSNav";  
 
 export default function OperationsPage() {
   /* -------------------------------------------------------
@@ -89,11 +90,14 @@ export default function OperationsPage() {
      UI (UNCHANGED)
   -------------------------------------------------------- */
   return (
-    <div className="min-h-screen bg-violet-50 p-8 font-sans text-slate-900">
-      <header className="max-w-7xl mx-auto mb-10 flex flex-col lg:flex-row justify-between items-end gap-6">
+    <div className="min-h-screen bg-violet-100 p-8 font-sans text-slate-900">
+      <div className="-mt-6">
+       <POSNav active="kitchen" />
+       </div>
+      <header className="mt-4 max-w-7xl mx-auto mb-10 flex flex-col lg:flex-row justify-between items-end gap-6">
         <div>
           <h1 className="text-4xl font-black text-slate-900 uppercase tracking-tighter italic">
-            Operations
+            Kitchen - Operations
           </h1>
           <p className="text-violet-600 font-bold uppercase tracking-widest text-xs mt-2">
             Fulfillment Dashboard
@@ -115,7 +119,7 @@ export default function OperationsPage() {
             <h2 className="text-md font-black uppercase tracking-[0.2em] text-red-700">
               ⚠️ Needs Fulfillment
             </h2>
-            <p className="text-xs text-slate-500 mt-1 ml-8">
+            <p className="text-xs italic text-slate-500 mt-1 ml-8">
               ~ Orders that still need to be filled ~
             </p>
           </div>
@@ -399,7 +403,7 @@ function Section(props: any) {
           </div>
 
           {props.subtitle && (
-            <span className="text-xs text-stone-500 mt-1 ml-8">
+            <span className="text-xs italic text-stone-500 mt-1 ml-8">
               ~ {props.subtitle} ~
             </span>
           )}

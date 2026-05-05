@@ -225,8 +225,8 @@ export default function POSGrid({
           {/* MENU */}
           <div className="col-span-1 min-[850px]:col-span-8">
             <section className="p-6 border rounded-[2.5rem] bg-violet-950/90 shadow-xl shadow-violet-900 h-[480px] overflow-y-auto custom-scrollbar">
-              <h2 className="p-1 inline-block text-xl font-black text-violet-200 uppercase tracking-[0.2em] bg-violet-500/80 backdrop-blur-xl border border-violet-700/40 rounded-xl shadow-md">
-                🧁 Our Menu
+              <h2 className="p-1 pr-4 inline-block text-xl font-black text-violet-200 uppercase tracking-[0.2em] bg-violet-500/80 backdrop-blur-xl border border-violet-700/40 rounded-xl shadow-md">
+                🧁 Our Menu 
               </h2>
 
               <ProductList

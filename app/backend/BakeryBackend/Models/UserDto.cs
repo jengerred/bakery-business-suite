@@ -9,6 +9,8 @@ namespace BakeryBackend.Models
         public string? City { get; set; }
         public string? Zip { get; set; }
         public string? Role { get; set; }
+
+        public string? PinHash { get; set; }
         
     }
 }

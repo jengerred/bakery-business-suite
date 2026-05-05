@@ -5,7 +5,7 @@ import { useState } from "react";
 import LogoutModal from "./LogoutModal";
 
 type POSNavProps = {
-  active: "register" | "pickup" | "transactions" | "employee";
+  active: "register" | "pickup" | "transactions" | "kitchen" | "employee";
 };
 
 export default function POSNav({ active }: POSNavProps) {
@@ -75,6 +75,16 @@ export default function POSNav({ active }: POSNavProps) {
             }`}
           >
             Transactions
+          </Link>
+
+        {/* Kitchen (fulfillment) */}
+          <Link
+            href="/pos/kitchen"
+            className={`${baseBtn} ${
+              active === "kitchen" ? activeTab : inactive
+            }`}
+          >
+            Kitchen
           </Link>
 
           {/* EMPLOYEE */}

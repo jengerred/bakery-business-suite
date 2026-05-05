@@ -1,35 +1,16 @@
 import React from "react";
-
-type Order = {
-  id: string;
-  customerName: string;
-  total: number;
-  status: string;
-  fulfillmentType: string;
-  createdAt: string;
-  items: {
-    quantity: number;
-    product: { name: string };
-  }[];
-  // Shipping fields
-  shippingCarrier?: string;
-  trackingNumber?: string;
-  labelUrl?: string;
-  fulfilledAt?: string;
-  // Optional fields (kept for future use, but not central to this UI)
-  customerEmail?: string;
-  customerPhone?: string;
-};
+import type { ManagerOrder } from "../../../types/order";
+import OrderDetails from "../../../components/OrderDetails";
 
 export type FulfillmentCardProps = {
-  order: Order;
+  order: ManagerOrder;
   variant: "pickup" | "shipping" | "delivery";
   expanded: boolean;
   onToggleExpand: () => void;
   primaryLabel: string;
   onPrimaryAction?: () => void;
   primaryDisabled?: boolean;
-  onOpenModal: (order: Order) => void;
+  onOpenModal: (order: ManagerOrder) => void;
 };
 
 export function FulfillmentCard({
@@ -40,22 +21,21 @@ export function FulfillmentCard({
   primaryLabel,
   onPrimaryAction,
   primaryDisabled,
-  onOpenModal, 
+  onOpenModal,
 }: FulfillmentCardProps) {
   let themeClass = "bg-purple-600";
-    if (variant === "shipping") themeClass = "bg-blue-600";
-    if (variant === "delivery") themeClass = "bg-emerald-600";
+  if (variant === "shipping") themeClass = "bg-blue-600";
+  if (variant === "delivery") themeClass = "bg-emerald-600";
 
   let borderClass = "border-purple-300";
-    if (variant === "shipping") borderClass = "border-blue-300";
-    if (variant === "delivery") borderClass = "border-emerald-300";
-
+  if (variant === "shipping") borderClass = "border-blue-300";
+  if (variant === "delivery") borderClass = "border-emerald-300";
 
   return (
     <div
       onClick={() => onOpenModal(order)}
       className={`
-        group bg-white b rounded-2xl
+        group bg-white rounded-2xl
         p-3 sm:p-4 md:p-5
         shadow-sm 
         transition-all duration-200
@@ -66,7 +46,7 @@ export function FulfillmentCard({
         hover:scale-[1.05]
         hover:-translate-y-1
         cursor-pointer
-       `}
+      `}
     >
       {/* Header */}
       <div className="flex justify-between items-start mb-2 sm:mb-3">
@@ -77,7 +57,7 @@ export function FulfillmentCard({
             ${themeClass}
           `}
         >
-          {order.fulfillmentType || variant.toUpperCase()}
+          {order.fulfillmentType?.toUpperCase() || variant.toUpperCase()}
         </span>
 
         <span className="text-stone-300 font-mono text-[9px] sm:text-[10px]">
@@ -85,7 +65,7 @@ export function FulfillmentCard({
         </span>
       </div>
 
-      {/* ID instead of name */}
+      {/* ID */}
       <div className="flex justify-between items-start mb-2 sm:mb-3">
         <h3 className="text-base sm:text-lg md:text-xl font-black text-slate-900 uppercase italic leading-none">
           #{order.id.slice(-4).toUpperCase()}
@@ -98,14 +78,12 @@ export function FulfillmentCard({
 
       {/* Items */}
       <div className="mb-2 sm:mb-4">
-        {order.items
-          ?.slice(0, expanded ? 99 : 1)
-          .map((item, i) => (
-            <p key={i} className="text-xs sm:text-sm font-bold text-stone-600 py-0.5">
-              <span className="text-violet-600">{item.quantity}x</span>{" "}
-              {item.product?.name}
-            </p>
-          ))}
+        {order.items?.slice(0, expanded ? 99 : 1).map((item, i) => (
+          <p key={i} className="text-xs sm:text-sm font-bold text-stone-600 py-0.5">
+            <span className="text-violet-600">{item.quantity}x</span>{" "}
+            {item.product?.name}
+          </p>
+        ))}
 
         {order.items && order.items.length > 1 && !expanded && (
           <p className="text-[9px] sm:text-[11px] text-stone-400 mt-1">
@@ -133,10 +111,9 @@ export function FulfillmentCard({
       <button
         disabled={primaryDisabled || !onPrimaryAction}
         onClick={(e) => {
-        e.stopPropagation();
-        onPrimaryAction?.();
+          e.stopPropagation();
+          onPrimaryAction?.();
         }}
-
         className={`
           w-full p-2 sm:p-3 rounded-xl sm:rounded-2xl text-white mb-2
           text-center transition-all font-black
@@ -155,10 +132,9 @@ export function FulfillmentCard({
       <button
         type="button"
         onClick={(e) => {
-        e.stopPropagation();
-        onToggleExpand();
+          e.stopPropagation();
+          onToggleExpand();
         }}
-
         className="
           w-full py-1.5 sm:py-2 border-2 border-stone-100
           text-stone-400 font-black uppercase
@@ -171,39 +147,8 @@ export function FulfillmentCard({
 
       {/* Expanded details */}
       {expanded && (
-        <div className="mt-3 sm:mt-4 space-y-3 text-[10px] sm:text-xs text-stone-600">
-          <div className="bg-stone-50 p-2 sm:p-3 rounded-xl sm:rounded-2xl">
-            <h4 className="font-black text-stone-800 text-[8px] sm:text-[10px] uppercase tracking-[0.2em] mb-1">
-              Order Details
-            </h4>
-            <p>
-              <span className="font-bold">Status:</span> {order.status}
-            </p>
-            <p>
-              <span className="font-bold">Fulfilled:</span>{" "}
-              {order.fulfilledAt
-                ? new Date(order.fulfilledAt).toLocaleString()
-                : "Not yet"}
-            </p>
-          </div>
-
-          <div className="bg-stone-50 p-2 sm:p-3 rounded-xl sm:rounded-2xl">
-            <h4 className="font-black text-stone-800 text-[8px] sm:text-[10px] uppercase tracking-[0.2em] mb-1">
-              Customer
-            </h4>
-            <p>
-              <span className="font-bold">Name:</span>{" "}
-              {order.customerName || "N/A"}
-            </p>
-            <p>
-              <span className="font-bold">Email:</span>{" "}
-              {order.customerEmail || "N/A"}
-            </p>
-            <p>
-              <span className="font-bold">Phone:</span>{" "}
-              {order.customerPhone || "N/A"}
-            </p>
-          </div>
+        <div className="mt-3 sm:mt-4">
+          <OrderDetails order={order} />
         </div>
       )}
     </div>

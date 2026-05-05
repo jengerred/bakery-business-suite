@@ -33,6 +33,10 @@ namespace BakeryBackend.Models
         [Column("role")]
         public string Role { get; set; } = "customer";
 
+        [Column("pinHash")]
+        public string? PinHash { get; set;
+
 
     }
+}
 }
