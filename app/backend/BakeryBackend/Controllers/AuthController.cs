@@ -31,12 +31,13 @@ namespace BakeryBackend.Controllers
                 return BadRequest(new { error = "PIN required" });
 
             // Get all profiles with a PIN set
-            var users = await _context.Profiles
-                .Where(u => u.PinHash != null)
+           var candidates = await _context.Profiles
+                .Where(u => u.PinHash != null && u.Role != "customer")
                 .ToListAsync();
 
             // Verify PIN against each hash
-            var user = users.FirstOrDefault(u => PinHasher.VerifyPin(request.Pin, u.PinHash));
+          var user = candidates.FirstOrDefault(u => PinHasher.VerifyPin(request.Pin, u.PinHash));
+
 
             if (user == null)
                 return Unauthorized(new { error = "Invalid PIN" });
