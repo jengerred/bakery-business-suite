@@ -108,12 +108,12 @@ namespace BakeryBackend.Controllers
     // ---------------------------------------------------------
     public class PinLoginRequest
     {
-        public string Pin { get; set; }
+        public string? Pin { get; set; }
     }
 
     public class SetPinRequest
     {
         public Guid UserId { get; set; }
-        public string Pin { get; set; }
+        public string? Pin { get; set; }
     }
 }
